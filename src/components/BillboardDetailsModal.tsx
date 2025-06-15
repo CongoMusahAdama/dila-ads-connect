@@ -53,12 +53,12 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
             <div className="space-y-3">
               <div className="aspect-video bg-muted rounded-lg overflow-hidden">
                 <img 
-                  src={billboard.images[0] || "/lovable-uploads/9e594151-058a-48ba-aa89-197d1b697959.png"}
+                  src={billboard.images?.[0] || "/lovable-uploads/9e594151-058a-48ba-aa89-197d1b697959.png"}
                   alt={billboard.title}
                   className="w-full h-full object-cover"
                 />
               </div>
-              {billboard.images.length > 1 && (
+              {billboard.images && billboard.images.length > 1 && (
                 <div className="grid grid-cols-3 gap-2">
                   {billboard.images.slice(1, 4).map((image, index) => (
                     <div key={index} className="aspect-square bg-muted rounded-md overflow-hidden">
