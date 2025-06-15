@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import Header from "@/components/Header";
 import BillboardSearch from "@/components/BillboardSearch";
+import MyBookingsModal from "@/components/MyBookingsModal";
 
 const Advertiser = () => {
   const { user, profile, loading } = useAuth();
@@ -29,7 +30,13 @@ const Advertiser = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <BillboardSearch />
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Advertiser Dashboard</h1>
+          <MyBookingsModal />
+        </div>
+        <BillboardSearch />
+      </div>
     </div>
   );
 };
