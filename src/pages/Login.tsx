@@ -1,17 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
-    role: "advertiser"
+    password: ""
   });
+  const { signIn, user, loading } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/dashboard');
+    }
+  }, [user, loading, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -20,10 +29,23 @@ const Login = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement login logic with Supabase
-    console.log("Login attempt:", formData);
+    
+    const { error } = await signIn(formData.email, formData.password);
+    
+    if (error) {
+      toast({
+        title: "Login Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Welcome back!",
+        description: "You have been signed in successfully.",
+      });
+    }
   };
 
   return (
@@ -59,24 +81,6 @@ const Login = () => {
                 onChange={handleInputChange}
                 required
               />
-            </div>
-
-            <div className="space-y-3">
-              <Label>Login as:</Label>
-              <RadioGroup
-                value={formData.role}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
-                className="grid grid-cols-2 gap-4"
-              >
-                <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent">
-                  <RadioGroupItem value="advertiser" id="advertiser" />
-                  <Label htmlFor="advertiser" className="cursor-pointer">Advertiser</Label>
-                </div>
-                <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent">
-                  <RadioGroupItem value="owner" id="owner" />
-                  <Label htmlFor="owner" className="cursor-pointer">Billboard Owner</Label>
-                </div>
-              </RadioGroup>
             </div>
 
             <Button type="submit" className="w-full">
