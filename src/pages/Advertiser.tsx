@@ -9,8 +9,12 @@ const Advertiser = () => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
 
+  console.log('Advertiser page - User:', user?.id, 'Profile:', profile?.role, 'Loading:', loading);
+
   useEffect(() => {
+    console.log('Advertiser useEffect - User:', user?.id, 'Profile:', profile, 'Loading:', loading);
     if (!loading && (!user || profile?.role !== 'advertiser')) {
+      console.log('Redirecting to login - no user or wrong role');
       navigate('/login');
     }
   }, [user, profile, loading, navigate]);
