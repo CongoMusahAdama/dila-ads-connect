@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Header = () => {
   return (
@@ -20,10 +21,10 @@ const Header = () => {
             How It Works
           </a>
           <Button variant="ghost" asChild>
-            <a href="/signup">Sign Up</a>
+            <Link to="/signup">Sign Up</Link>
           </Button>
           <Button asChild>
-            <a href="/login">Log In</a>
+            <Link to="/login">Log In</Link>
           </Button>
         </nav>
       </div>

@@ -2,9 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Trigger animation on component mount with 2 second delay
@@ -62,6 +64,16 @@ const HeroSection = () => {
                 <Button className="h-14 px-8 text-lg bg-secondary hover:bg-secondary/90 hover:scale-105 transition-all duration-200">
                   <Search className="mr-2 h-5 w-5" />
                   Search Billboards
+                </Button>
+              </div>
+              
+              <div className="mt-6">
+                <Button 
+                  onClick={() => navigate('/login')}
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg font-semibold hover:scale-105 transition-all duration-200"
+                >
+                  Get Started
                 </Button>
               </div>
             </div>
