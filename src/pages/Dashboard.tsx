@@ -262,7 +262,7 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" onClick={() => navigate('/')}>
+            <Button className="w-full" onClick={() => navigate('/advertiser')}>
               Browse Billboards
             </Button>
           </CardContent>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MapPin, Calendar, DollarSign, Eye, X, Phone, Mail } from "lucide-react";
+import BookingButton from "./BookingButton";
 
 interface BillboardDetailsModalProps {
   isOpen: boolean;
@@ -158,12 +159,20 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
         {/* Footer - Fixed */}
         <div className="p-4 pt-2 border-t shrink-0">
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="flex-1" onClick={onClose}>
+            <Button 
+              variant="outline" 
+              className="flex-1" 
+              onClick={() => {
+                if (billboard?.contact.phone) {
+                  window.open(`tel:${billboard.contact.phone}`, '_self');
+                } else if (billboard?.contact.email) {
+                  window.open(`mailto:${billboard.contact.email}`, '_self');
+                }
+              }}
+            >
               Contact Owner
             </Button>
-            <Button className="flex-1">
-              Book Now
-            </Button>
+            <BookingButton billboard={billboard} />
           </div>
         </div>
       </DialogContent>
