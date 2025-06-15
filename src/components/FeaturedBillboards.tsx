@@ -32,8 +32,8 @@ const FeaturedBillboards = () => {
       views: Math.floor(Math.random() * 5000) + 1000,
       contact: {
         name: "Billboard Owner",
-        phone: "+233 50 123 4567",
-        email: "owner@example.com"
+        phone: billboard.phone || "+233 50 123 4567",
+        email: billboard.email || "owner@example.com"
       },
       images: [billboard.image_url || "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"],
       features: ["Premium Location", "High Traffic", "LED Lighting", "24/7 Visibility"]
