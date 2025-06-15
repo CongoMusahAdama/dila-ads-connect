@@ -1,14 +1,44 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
+import BillboardDetailsModal from "./BillboardDetailsModal";
+import { useState } from "react";
 
 const FeaturedBillboards = () => {
   const navigate = useNavigate();
+  const [selectedBillboard, setSelectedBillboard] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleBooking = () => {
     navigate('/login');
+  };
+
+  const handleViewDetails = (billboard) => {
+    const detailedBillboard = {
+      id: billboard.id.toString(),
+      title: `Premium Billboard - ${billboard.location}`,
+      location: billboard.location,
+      price: parseInt(billboard.price.replace(/[^\d]/g, '')),
+      size: billboard.details,
+      description: "Premium billboard location with high visibility and excellent traffic flow. Perfect for brand awareness campaigns and reaching your target audience. This location offers maximum exposure with thousands of daily impressions from both vehicular and pedestrian traffic.",
+      availability: "Available",
+      views: Math.floor(Math.random() * 5000) + 1000,
+      contact: {
+        name: "Billboard Owner",
+        phone: "+233 50 123 4567",
+        email: "owner@example.com"
+      },
+      images: [billboard.image],
+      features: ["Premium Location", "High Traffic", "LED Lighting", "24/7 Visibility"]
+    };
+    setSelectedBillboard(detailedBillboard);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedBillboard(null);
   };
   const billboards = [
     {
@@ -63,56 +93,23 @@ const FeaturedBillboards = () => {
               </CardContent>
               
               <CardFooter className="p-6 pt-0">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full">
-                      View Details
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle className="text-2xl font-bold">{billboard.location}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-6">
-                      <div className="aspect-video overflow-hidden rounded-lg">
-                        <img 
-                          src={billboard.image} 
-                          alt={`Billboard in ${billboard.location}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="font-semibold text-muted-foreground">Specifications</h4>
-                          <p className="text-lg">{billboard.details}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-muted-foreground">Price</h4>
-                          <p className="text-2xl font-bold text-primary">{billboard.price}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-muted-foreground mb-2">Location Details</h4>
-                        <p className="text-muted-foreground">
-                          Premium billboard location with high visibility and excellent traffic flow. 
-                          Perfect for brand awareness campaigns and reaching your target audience.
-                        </p>
-                      </div>
-                      <div className="flex gap-3 pt-4">
-                        <Button onClick={handleBooking} className="flex-1">
-                          Book Now
-                        </Button>
-                        <Button variant="outline" className="flex-1">
-                          Contact Owner
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => handleViewDetails(billboard)}
+                >
+                  View Details
+                </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
+
+        <BillboardDetailsModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          billboard={selectedBillboard}
+        />
       </div>
     </section>
   );
