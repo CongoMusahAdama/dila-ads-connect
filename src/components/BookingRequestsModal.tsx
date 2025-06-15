@@ -82,14 +82,45 @@ const BookingRequestsModal = () => {
 
       if (error) throw error;
 
-      // If accepted, mark billboard as unavailable
-      if (action === 'accepted') {
-        const request = requests.find(r => r.id === requestId);
-        if (request) {
+      // Get the request details for notification
+      const request = requests.find(r => r.id === requestId);
+      
+      if (request) {
+        // If accepted, mark billboard as unavailable
+        if (action === 'accepted') {
           await supabase
             .from('billboards')
             .update({ is_available: false })
             .eq('id', request.billboard_id);
+        }
+
+        // Get advertiser email for notification
+        try {
+          const { data: advertiserData } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('id', request.advertiser_id)
+            .single();
+
+          if (advertiserData) {
+            const { data: userData } = await supabase.auth.admin.getUserById(advertiserData.user_id);
+            const advertiserEmail = userData.user?.email;
+
+            if (advertiserEmail) {
+              // Send notification to advertiser
+              await supabase.functions.invoke('send-notification', {
+                body: {
+                  type: action === 'accepted' ? 'booking_accepted' : 'booking_rejected',
+                  recipientEmail: advertiserEmail,
+                  billboardName: request.billboards.name,
+                  ownerName: 'Billboard Owner'
+                }
+              });
+            }
+          }
+        } catch (notificationError) {
+          console.error('Failed to send notification:', notificationError);
+          // Don't block the action if notification fails
         }
       }
 

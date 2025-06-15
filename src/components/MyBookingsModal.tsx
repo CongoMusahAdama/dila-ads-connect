@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Calendar, MapPin, DollarSign } from "lucide-react";
+import { usePaystackPayment } from 'react-paystack';
 
 interface Booking {
   id: string;
@@ -91,6 +92,56 @@ const MyBookingsModal = () => {
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const handlePayment = (booking: Booking) => {
+    const paystackConfig = {
+      reference: new Date().getTime().toString(),
+      email: user?.email || '',
+      amount: Math.round(booking.total_amount * 100), // Convert to kobo (GHS smallest unit)
+      publicKey: 'pk_live_a9e86ee55c4a014e1affce905ad59f11d9fe3bce',
+      currency: 'GHS',
+    };
+
+    const initializePayment = usePaystackPayment(paystackConfig);
+    
+    const onPaymentSuccess = async (reference: any) => {
+      try {
+        await supabase
+          .from('booking_requests')
+          .update({ 
+            status: 'paid',
+            response_message: `Payment completed successfully. Reference: ${reference.reference}`
+          })
+          .eq('id', booking.id);
+
+        toast({
+          title: "Payment Successful!",
+          description: `Your booking has been confirmed. Reference: ${reference.reference}`,
+        });
+        
+        fetchMyBookings(); // Refresh the list
+      } catch (error) {
+        console.error('Error updating booking status:', error);
+        toast({
+          title: "Payment Successful",
+          description: "Your payment was processed but there was an issue updating the status. Please contact support.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    const onPaymentClose = () => {
+      toast({
+        title: "Payment Cancelled",
+        description: "Your payment was cancelled. You can try again anytime.",
+      });
+    };
+
+    initializePayment({
+      onSuccess: onPaymentSuccess,
+      onClose: onPaymentClose
+    });
   };
 
   return (
@@ -184,6 +235,20 @@ const MyBookingsModal = () => {
                       )}
                     </div>
                   </div>
+
+                  {booking.status === 'accepted' && (
+                    <div className="pt-4 border-t">
+                      <Button
+                        onClick={() => handlePayment(booking)}
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                      >
+                        Finalize & Pay - GHS {booking.total_amount.toLocaleString()}
+                      </Button>
+                      <p className="text-sm text-muted-foreground mt-2 text-center">
+                        Your booking request has been accepted. Complete payment to confirm your booking.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

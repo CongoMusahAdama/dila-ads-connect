@@ -83,6 +83,24 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
 
       if (error) throw error;
 
+      // Send notification to billboard owner
+      try {
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            type: 'booking_request',
+            recipientEmail: billboard.email || 'owner@example.com',
+            billboardName: billboard.name,
+            advertiserName: `${user.user_metadata?.first_name || 'User'} ${user.user_metadata?.last_name || ''}`.trim(),
+            startDate: startDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0],
+            totalAmount: totalAmount
+          }
+        });
+      } catch (notificationError) {
+        console.error('Failed to send notification:', notificationError);
+        // Don't block the booking if notification fails
+      }
+
       toast({
         title: "Booking Request Submitted!",
         description: "Your booking request has been sent to the billboard owner for approval. You'll be notified once approved.",
