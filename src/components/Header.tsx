@@ -1,13 +1,53 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, User, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, profile, signOut } = useAuth();
 
-  const NavLinks = () => (
+  const handleLogout = async () => {
+    await signOut();
+    setIsOpen(false);
+  };
+
+  const AuthenticatedNav = () => (
+    <>
+      <a href="#billboards" className="text-foreground hover:text-primary transition-colors block py-2">
+        Find Billboards
+      </a>
+      <a href="#how-it-works" className="text-foreground hover:text-primary transition-colors block py-2">
+        How It Works
+      </a>
+      <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2 md:items-center">
+        <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors block py-2">
+          Dashboard
+        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex items-center space-x-2">
+              <User size={18} />
+              <span className="hidden sm:inline">
+                {profile?.first_name || 'User'} ({profile?.role || 'User'})
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </>
+  );
+
+  const GuestNav = () => (
     <>
       <a href="#billboards" className="text-foreground hover:text-primary transition-colors block py-2">
         Find Billboards
@@ -39,7 +79,7 @@ const Header = () => {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          <NavLinks />
+          {user ? <AuthenticatedNav /> : <GuestNav />}
         </nav>
 
         {/* Mobile Navigation */}
@@ -51,7 +91,7 @@ const Header = () => {
           </SheetTrigger>
           <SheetContent side="right" className="w-80">
             <div className="flex flex-col space-y-6 mt-6">
-              <NavLinks />
+              {user ? <AuthenticatedNav /> : <GuestNav />}
             </div>
           </SheetContent>
         </Sheet>
