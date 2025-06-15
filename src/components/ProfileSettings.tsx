@@ -1,7 +1,6 @@
 
 import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,12 +17,10 @@ const ProfileSettings = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
-    first_name: profile?.first_name || '',
-    last_name: profile?.last_name || '',
     bio: profile?.bio || ''
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
@@ -75,7 +72,7 @@ const ProfileSettings = () => {
     }
   };
 
-  const handleSaveProfile = async () => {
+  const handleSaveBio = async () => {
     if (!user) return;
 
     setLoading(true);
@@ -83,8 +80,6 @@ const ProfileSettings = () => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
           bio: formData.bio
         })
         .eq('user_id', user.id);
@@ -93,7 +88,7 @@ const ProfileSettings = () => {
 
       toast({
         title: "Success",
-        description: "Profile updated successfully!",
+        description: "Bio updated successfully!",
       });
 
       // Refresh the page to show updated info
@@ -110,10 +105,24 @@ const ProfileSettings = () => {
     }
   };
 
+  const getDisplayName = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    } else if (profile?.first_name) {
+      return profile.first_name;
+    } else if (profile?.last_name) {
+      return profile.last_name;
+    }
+    return profile?.role === 'owner' ? 'Billboard Owner' : 'Advertiser';
+  };
+
   const getInitials = () => {
-    const firstName = formData.first_name || profile?.first_name || '';
-    const lastName = formData.last_name || profile?.last_name || '';
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    const firstName = profile?.first_name || '';
+    const lastName = profile?.last_name || '';
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    }
+    return profile?.role === 'owner' ? 'BO' : 'AD';
   };
 
   return (
@@ -121,10 +130,20 @@ const ProfileSettings = () => {
       <CardHeader>
         <CardTitle>Profile Settings</CardTitle>
         <CardDescription>
-          Manage your profile information and upload a profile picture
+          Manage your profile picture and bio. Your name is set from registration and cannot be changed here.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Display Name (Read-only) */}
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            {getDisplayName()}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Your registered name
+          </p>
+        </div>
+
         {/* Avatar Section */}
         <div className="flex flex-col items-center space-y-4">
           <div className="relative">
@@ -151,31 +170,8 @@ const ProfileSettings = () => {
           {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
         </div>
 
-        {/* Profile Form */}
+        {/* Bio Section */}
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">First Name</Label>
-              <Input
-                id="first_name"
-                name="first_name"
-                value={formData.first_name}
-                onChange={handleInputChange}
-                placeholder="Enter your first name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="last_name">Last Name</Label>
-              <Input
-                id="last_name"
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleInputChange}
-                placeholder="Enter your last name"
-              />
-            </div>
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
             <Textarea
@@ -188,9 +184,9 @@ const ProfileSettings = () => {
             />
           </div>
 
-          <Button onClick={handleSaveProfile} disabled={loading} className="w-full">
+          <Button onClick={handleSaveBio} disabled={loading} className="w-full">
             <Save size={16} className="mr-2" />
-            {loading ? "Saving..." : "Save Profile"}
+            {loading ? "Saving..." : "Save Bio"}
           </Button>
         </div>
       </CardContent>
