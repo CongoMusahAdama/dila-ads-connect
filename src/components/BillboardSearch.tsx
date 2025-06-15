@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import BillboardDetailsModal from "./BillboardDetailsModal";
+import BookingModal from "./BookingModal";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface Billboard {
   id: string;
@@ -15,36 +17,46 @@ interface Billboard {
   location: string;
   size: string;
   price_per_day: number;
-  image_url: string | null;
-  description: string | null;
+  description: string;
+  image_url: string;
   is_available: boolean;
-  phone?: string | null;
-  email?: string | null;
+  phone: string;
+  email: string;
 }
 
 const BillboardSearch = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [sizeFilter, setSizeFilter] = useState("");
-  const [priceRange, setPriceRange] = useState("");
   const [billboards, setBillboards] = useState<Billboard[]>([]);
   const [filteredBillboards, setFilteredBillboards] = useState<Billboard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [locationFilter, setLocationFilter] = useState("all");
+  const [sizeFilter, setSizeFilter] = useState("all");
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [availabilityFilter, setAvailabilityFilter] = useState("available");
   const [selectedBillboard, setSelectedBillboard] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchBillboards();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [billboards, searchTerm, locationFilter, sizeFilter, priceFilter, availabilityFilter]);
 
   const fetchBillboards = async () => {
     try {
       const { data, error } = await supabase
         .from('billboards')
         .select('*')
-        .eq('is_available', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setBillboards(data || []);
-      setFilteredBillboards(data || []);
     } catch (error: any) {
       toast({
         title: "Error fetching billboards",
@@ -56,14 +68,10 @@ const BillboardSearch = () => {
     }
   };
 
-  useEffect(() => {
-    fetchBillboards();
-  }, []);
-
-  useEffect(() => {
+  const applyFilters = () => {
     let filtered = billboards;
 
-    // Search by name or location (case-insensitive, partial matching)
+    // Search by name or location (case-insensitive)
     if (searchTerm) {
       filtered = filtered.filter(billboard =>
         billboard.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -72,44 +80,45 @@ const BillboardSearch = () => {
     }
 
     // Filter by location
-    if (locationFilter && locationFilter !== "all") {
+    if (locationFilter !== "all") {
       filtered = filtered.filter(billboard =>
         billboard.location.toLowerCase().includes(locationFilter.toLowerCase())
       );
     }
 
     // Filter by size
-    if (sizeFilter && sizeFilter !== "all") {
+    if (sizeFilter !== "all") {
       filtered = filtered.filter(billboard =>
         billboard.size.toLowerCase().includes(sizeFilter.toLowerCase())
       );
     }
 
     // Filter by price range
-    if (priceRange && priceRange !== "all") {
+    if (priceFilter !== "all") {
       filtered = filtered.filter(billboard => {
         const price = billboard.price_per_day;
-        switch (priceRange) {
-          case "0-100":
-            return price <= 100;
-          case "101-500":
-            return price > 100 && price <= 500;
-          case "501-1000":
-            return price > 500 && price <= 1000;
-          case "1000+":
-            return price > 1000;
-          default:
-            return true;
+        switch (priceFilter) {
+          case "low": return price <= 100;
+          case "medium": return price > 100 && price <= 500;
+          case "high": return price > 500;
+          default: return true;
         }
       });
     }
 
+    // Filter by availability
+    if (availabilityFilter === "available") {
+      filtered = filtered.filter(billboard => billboard.is_available);
+    } else if (availabilityFilter === "unavailable") {
+      filtered = filtered.filter(billboard => !billboard.is_available);
+    }
+
     setFilteredBillboards(filtered);
-  }, [searchTerm, locationFilter, sizeFilter, priceRange, billboards]);
+  };
 
   const handleViewDetails = (billboard: Billboard) => {
     const detailedBillboard = {
-      id: billboard.id.toString(),
+      id: billboard.id,
       title: billboard.name,
       location: billboard.location,
       price: billboard.price_per_day,
@@ -126,17 +135,31 @@ const BillboardSearch = () => {
       features: ["Premium Location", "High Traffic", "LED Lighting", "24/7 Visibility"]
     };
     setSelectedBillboard(detailedBillboard);
-    setIsModalOpen(true);
+    setIsDetailsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedBillboard(null);
+  const handleBookNow = (billboard: Billboard) => {
+    if (!user || profile?.role !== 'advertiser') {
+      toast({
+        title: "Access Denied",
+        description: "Please login as an advertiser to book billboards.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedBillboard(billboard);
+    setIsBookingModalOpen(true);
   };
 
-  // Get unique locations and sizes for filter options
-  const uniqueLocations = [...new Set(billboards.map(b => b.location))];
-  const uniqueSizes = [...new Set(billboards.map(b => b.size))];
+  const getUniqueLocations = () => {
+    const locations = billboards.map(b => b.location);
+    return [...new Set(locations)];
+  };
+
+  const getUniqueSizes = () => {
+    const sizes = billboards.map(b => b.size);
+    return [...new Set(sizes)];
+  };
 
   if (loading) {
     return (
@@ -148,13 +171,13 @@ const BillboardSearch = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4">Find Billboards</h1>
-        
-        {/* Search and Filter Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+      <h1 className="text-3xl font-bold mb-8">Find Billboards</h1>
+      
+      {/* Search and Filters */}
+      <div className="mb-8 space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name or location..."
               value={searchTerm}
@@ -162,14 +185,20 @@ const BillboardSearch = () => {
               className="pl-10"
             />
           </div>
-          
+          <Button variant="outline" className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filters
+          </Button>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Select value={locationFilter} onValueChange={setLocationFilter}>
             <SelectTrigger>
-              <SelectValue placeholder="All Locations" />
+              <SelectValue placeholder="Location" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Locations</SelectItem>
-              {uniqueLocations.map(location => (
+              {getUniqueLocations().map((location) => (
                 <SelectItem key={location} value={location.toLowerCase()}>
                   {location}
                 </SelectItem>
@@ -179,11 +208,11 @@ const BillboardSearch = () => {
 
           <Select value={sizeFilter} onValueChange={setSizeFilter}>
             <SelectTrigger>
-              <SelectValue placeholder="All Sizes" />
+              <SelectValue placeholder="Size" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sizes</SelectItem>
-              {uniqueSizes.map(size => (
+              {getUniqueSizes().map((size) => (
                 <SelectItem key={size} value={size.toLowerCase()}>
                   {size}
                 </SelectItem>
@@ -191,86 +220,88 @@ const BillboardSearch = () => {
             </SelectContent>
           </Select>
 
-          <Select value={priceRange} onValueChange={setPriceRange}>
+          <Select value={priceFilter} onValueChange={setPriceFilter}>
             <SelectTrigger>
               <SelectValue placeholder="Price Range" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Prices</SelectItem>
-              <SelectItem value="0-100">GH₵0 - GH₵100</SelectItem>
-              <SelectItem value="101-500">GH₵101 - GH₵500</SelectItem>
-              <SelectItem value="501-1000">GH₵501 - GH₵1000</SelectItem>
-              <SelectItem value="1000+">GH₵1000+</SelectItem>
+              <SelectItem value="low">Under GH₵100</SelectItem>
+              <SelectItem value="medium">GH₵100 - GH₵500</SelectItem>
+              <SelectItem value="high">Above GH₵500</SelectItem>
             </SelectContent>
           </Select>
 
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSearchTerm("");
-              setLocationFilter("");
-              setSizeFilter("");
-              setPriceRange("");
-            }}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Clear Filters
-          </Button>
+          <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Availability" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="available">Available</SelectItem>
+              <SelectItem value="unavailable">Unavailable</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* Results */}
-      {filteredBillboards.length > 0 ? (
+      {filteredBillboards.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground text-lg">No billboard matched your search. Try a different name or location.</p>
+        </div>
+      ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBillboards.map((billboard) => (
-            <Card key={billboard.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+            <Card key={billboard.id} className="overflow-hidden">
               <div className="relative">
-                <img 
-                  src={billboard.image_url || "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"} 
-                  alt={`Billboard: ${billboard.name}`}
+                <img
+                  src={billboard.image_url || "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"}
+                  alt={billboard.name}
                   className="w-full h-48 object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png";
-                  }}
                 />
-                <Badge className="absolute top-3 left-3 bg-secondary text-secondary-foreground">
-                  Available
+                <Badge className={`absolute top-3 left-3 ${billboard.is_available ? 'bg-green-500' : 'bg-red-500'}`}>
+                  {billboard.is_available ? 'Available' : 'Unavailable'}
                 </Badge>
               </div>
-              
-              <CardContent className="p-4">
-                <h3 className="font-bold text-lg mb-2">{billboard.name}</h3>
+              <CardContent className="p-6">
+                <h3 className="font-bold text-xl mb-2">{billboard.name}</h3>
                 <p className="text-muted-foreground mb-2">{billboard.location} • {billboard.size}</p>
                 <p className="text-primary font-semibold mb-4">GH₵ {billboard.price_per_day}/day</p>
                 
                 <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1"
                     onClick={() => handleViewDetails(billboard)}
                   >
                     View Details
                   </Button>
-                  <Button 
-                    className="flex-1"
-                    onClick={() => handleViewDetails(billboard)}
-                  >
-                    Book Now
-                  </Button>
+                  {billboard.is_available && (
+                    <Button
+                      className="flex-1"
+                      onClick={() => handleBookNow(billboard)}
+                    >
+                      Book Now
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground text-lg">No billboard matched your search. Try a different name or location.</p>
-        </div>
       )}
 
+      {/* Modals */}
       <BillboardDetailsModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        billboard={selectedBillboard}
+      />
+
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
         billboard={selectedBillboard}
       />
     </div>

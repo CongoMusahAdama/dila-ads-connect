@@ -13,12 +13,14 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          email: string | null
           id: string
           image_url: string | null
           is_available: boolean
           location: string
           name: string
           owner_id: string
+          phone: string | null
           price_per_day: number
           size: string
           updated_at: string
@@ -26,12 +28,14 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          email?: string | null
           id?: string
           image_url?: string | null
           is_available?: boolean
           location: string
           name: string
           owner_id: string
+          phone?: string | null
           price_per_day: number
           size: string
           updated_at?: string
@@ -39,12 +43,14 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          email?: string | null
           id?: string
           image_url?: string | null
           is_available?: boolean
           location?: string
           name?: string
           owner_id?: string
+          phone?: string | null
           price_per_day?: number
           size?: string
           updated_at?: string

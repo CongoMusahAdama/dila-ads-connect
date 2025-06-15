@@ -1,26 +1,21 @@
-import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
-import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  billboard: {
-    id: string;
-    title: string;
-    price: number;
-  } | null;
+  billboard: any;
 }
 
 const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
@@ -28,20 +23,23 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
   const [endDate, setEndDate] = useState<Date>();
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  
   const { user } = useAuth();
   const { toast } = useToast();
 
+  if (!billboard) return null;
+
   const calculateTotal = () => {
-    if (!startDate || !endDate || !billboard) return 0;
-    const days = differenceInDays(endDate, startDate) + 1;
-    return days * billboard.price;
+    if (!startDate || !endDate) return 0;
+    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    return days * billboard.price_per_day;
   };
 
-  const handleSubmitBooking = async () => {
-    if (!user || !billboard || !startDate || !endDate) {
+  const handleBookingSubmit = async () => {
+    if (!startDate || !endDate || !user) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields",
+        description: "Please select start and end dates.",
         variant: "destructive",
       });
       return;
@@ -54,10 +52,10 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
         .insert({
           advertiser_id: user.id,
           billboard_id: billboard.id,
-          start_date: format(startDate, 'yyyy-MM-dd'),
-          end_date: format(endDate, 'yyyy-MM-dd'),
-          message: message || null,
+          start_date: startDate.toISOString().split('T')[0],
+          end_date: endDate.toISOString().split('T')[0],
           total_amount: calculateTotal(),
+          message: message || null,
           status: 'pending'
         });
 
@@ -65,13 +63,9 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
 
       toast({
         title: "Booking Request Sent",
-        description: "Your booking request has been sent to the billboard owner.",
+        description: "Your booking request has been sent. Payment integration coming soon!",
       });
-
-      // Reset form and close modal
-      setStartDate(undefined);
-      setEndDate(undefined);
-      setMessage("");
+      
       onClose();
     } catch (error: any) {
       toast({
@@ -84,8 +78,6 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
     }
   };
 
-  if (!billboard) return null;
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -93,99 +85,102 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
           <DialogTitle>Book Billboard</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-semibold">{billboard.title}</h3>
-            <p className="text-sm text-muted-foreground">GH₵{billboard.price}/day</p>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h3 className="font-semibold">{billboard.name}</h3>
+            <p className="text-sm text-muted-foreground">{billboard.location}</p>
+            <p className="text-sm font-medium">GH₵{billboard.price_per_day}/day</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div>
-              <Label>End Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !endDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={setEndDate}
-                    disabled={(date) => date < (startDate || new Date())}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          <div>
-            <Label>Message (Optional)</Label>
-            <Textarea
-              placeholder="Add any special requirements or message for the owner..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          {startDate && endDate && (
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="flex justify-between text-sm">
-                <span>Duration:</span>
-                <span>{differenceInDays(endDate, startDate) + 1} days</span>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "PPP") : "Pick date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={setStartDate}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-              <div className="flex justify-between font-semibold">
-                <span>Total Amount:</span>
-                <span>GH₵{calculateTotal().toLocaleString()}</span>
+
+              <div className="space-y-2">
+                <Label>End Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "PPP") : "Pick date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={endDate}
+                      onSelect={setEndDate}
+                      disabled={(date) => date < (startDate || new Date())}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
-          )}
 
-          <div className="flex gap-2 pt-4">
-            <Button variant="outline" className="flex-1" onClick={onClose}>
+            <div className="space-y-2">
+              <Label>Message (Optional)</Label>
+              <Textarea
+                placeholder="Add a message to the billboard owner..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+            </div>
+
+            {startDate && endDate && (
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Total Amount:</span>
+                  <span className="text-lg font-bold text-primary">
+                    GH₵{calculateTotal().toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose} className="flex-1">
               Cancel
             </Button>
             <Button 
-              className="flex-1" 
-              onClick={handleSubmitBooking}
-              disabled={loading || !startDate || !endDate}
+              onClick={handleBookingSubmit} 
+              disabled={!startDate || !endDate || loading}
+              className="flex-1"
             >
               {loading ? "Sending..." : "Send Request"}
             </Button>
