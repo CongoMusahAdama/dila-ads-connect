@@ -1,7 +1,9 @@
 import { MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const HowItWorks = () => {
+  const navigate = useNavigate();
   const steps = [
     {
       icon: Search,
@@ -37,7 +39,10 @@ const HowItWorks = () => {
           ))}
         </div>
         
-        <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground px-8 py-3 text-lg">
+        <Button 
+          onClick={() => navigate('/login')}
+          className="bg-secondary hover:bg-secondary/90 text-secondary-foreground px-8 py-3 text-lg"
+        >
           Get Started
         </Button>
       </div>

@@ -38,7 +38,7 @@ const HeroSection = () => {
       const { data, error } = await supabase
         .from('billboards')
         .select('*')
-        .ilike('name', `%${searchQuery}%`)
+        .or(`name.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%`)
         .eq('is_available', true);
 
       if (error) throw error;
@@ -141,7 +141,7 @@ const HeroSection = () => {
                   ) : (
                     <div className="bg-background/80 backdrop-blur-sm rounded-lg border p-4 text-center">
                       <p className="text-muted-foreground">
-                        No billboard matched your search. Please try a different name or check back later.
+                        No billboard matched your search. Try a different name or location.
                       </p>
                     </div>
                   )}
