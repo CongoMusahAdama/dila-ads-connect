@@ -45,18 +45,31 @@ const BookingRequestsModal = () => {
         .from('booking_requests')
         .select(`
           *,
-          billboards!inner (name, location, owner_id),
-          profiles!booking_requests_advertiser_id_fkey (first_name, last_name)
+          billboards!inner (
+            name, 
+            location, 
+            owner_id
+          ),
+          profiles!booking_requests_advertiser_id_fkey (
+            first_name, 
+            last_name
+          )
         `)
         .eq('billboards.owner_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching booking requests:', error);
+        throw error;
+      }
+      
+      console.log('Fetched booking requests:', data);
       setRequests(data || []);
     } catch (error: any) {
+      console.error('Error in fetchBookingRequests:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch booking requests",
+        description: "Failed to fetch booking requests: " + error.message,
         variant: "destructive",
       });
     } finally {
