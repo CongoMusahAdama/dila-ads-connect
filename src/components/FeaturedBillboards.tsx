@@ -6,23 +6,26 @@ const FeaturedBillboards = () => {
   const billboards = [
     {
       id: 1,
-      location: "Accra",
-      details: "Accra +20x10",
-      image: "https://images.unsplash.com/photo-1486938289607-e9573fc25ebb?w=400&h=250&fit=crop",
+      location: "East Legon, Accra",
+      details: "48x14 feet • Premium Location",
+      price: "GH₵ 5,000/month",
+      image: "/lovable-uploads/a0b3855e-9008-4988-a6ad-69dc8e126c97.png",
       available: true
     },
     {
       id: 2,
-      location: "Kumasi",
-      details: "20x10 • Static",
-      image: "https://images.unsplash.com/photo-1466442929976-97f336a657be?w=400&h=250&fit=crop",
+      location: "Tema Motorway",
+      details: "40x12 feet • Highway Billboard",
+      price: "GH₵ 3,500/month",
+      image: "/lovable-uploads/c99a20af-03ce-4a67-8733-72a426ad4edd.png",
       available: true
     },
     {
       id: 3,
-      location: "Takoradi",
-      details: "Static • Static",
-      image: "https://images.unsplash.com/photo-1517022812141-23620dba5c23?w=400&h=250&fit=crop",
+      location: "Osu, Accra",
+      details: "32x10 feet • City Center",
+      price: "GH₵ 2,800/month",
+      image: "/lovable-uploads/f3499531-b3db-48fa-affd-cd6e2a3b321a.png",
       available: true
     }
   ];
@@ -48,7 +51,8 @@ const FeaturedBillboards = () => {
               
               <CardContent className="p-6">
                 <h3 className="font-bold text-xl mb-2">{billboard.location}</h3>
-                <p className="text-muted-foreground">{billboard.details}</p>
+                <p className="text-muted-foreground mb-2">{billboard.details}</p>
+                <p className="text-primary font-semibold">{billboard.price}</p>
               </CardContent>
               
               <CardFooter className="p-6 pt-0">
