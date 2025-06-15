@@ -287,19 +287,11 @@ const BillboardSearch = () => {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    className="w-full"
                     onClick={() => handleViewDetails(billboard)}
                   >
                     View Details
                   </Button>
-                  {billboard.is_available && (
-                    <Button
-                      className="flex-1"
-                      onClick={() => handleBookNow(billboard)}
-                    >
-                      Book Now
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>
