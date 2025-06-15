@@ -120,8 +120,10 @@ const Dashboard = () => {
   }
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    if (window.confirm("Are you sure you want to log out?")) {
+      await signOut();
+      navigate('/');
+    }
   };
 
   if (profile.role === 'owner') {

@@ -198,11 +198,9 @@ const BillboardSearch = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Locations</SelectItem>
-              {getUniqueLocations().map((location) => (
-                <SelectItem key={location} value={location.toLowerCase()}>
-                  {location}
-                </SelectItem>
-              ))}
+              <SelectItem value="accra">Accra</SelectItem>
+              <SelectItem value="takoradi">Takoradi</SelectItem>
+              <SelectItem value="kumasi">Kumasi</SelectItem>
             </SelectContent>
           </Select>
 
@@ -248,7 +246,8 @@ const BillboardSearch = () => {
       {/* Results */}
       {filteredBillboards.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground text-lg">No billboard matched your search. Try a different name or location.</p>
+          <p className="text-muted-foreground text-lg mb-2">Sorry, no billboards matched your search.</p>
+          <p className="text-sm text-muted-foreground">Please try a different location or keyword.</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
