@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -126,20 +125,20 @@ const ProfileSettings = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Profile Settings</CardTitle>
-        <CardDescription>
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader className="text-center pb-4">
+        <CardTitle className="text-lg sm:text-xl">Profile Settings</CardTitle>
+        <CardDescription className="text-sm px-2">
           Manage your profile picture and bio. Your name is set from registration and cannot be changed here.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 px-4 sm:px-6">
         {/* Display Name (Read-only) */}
         <div className="text-center">
-          <h3 className="text-lg font-semibold text-foreground mb-2">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2 break-words">
             {getDisplayName()}
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Your registered name
           </p>
         </div>
@@ -147,17 +146,18 @@ const ProfileSettings = () => {
         {/* Avatar Section */}
         <div className="flex flex-col items-center space-y-4">
           <div className="relative">
-            <Avatar className="w-24 h-24">
+            <Avatar className="w-20 h-20 sm:w-24 sm:h-24">
               <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
+              <AvatarFallback className="text-base sm:text-lg">{getInitials()}</AvatarFallback>
             </Avatar>
             <Button
               size="sm"
-              className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
+              className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 rounded-full h-7 w-7 sm:h-8 sm:w-8 p-0 shadow-lg"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
             >
-              <Camera size={16} />
+              <Camera size={14} className="sm:hidden" />
+              <Camera size={16} className="hidden sm:block" />
             </Button>
           </div>
           <input
@@ -167,13 +167,18 @@ const ProfileSettings = () => {
             onChange={handleAvatarUpload}
             className="hidden"
           />
-          {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
+          {uploading && (
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              <p className="text-xs sm:text-sm text-muted-foreground">Uploading...</p>
+            </div>
+          )}
         </div>
 
         {/* Bio Section */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
+            <Label htmlFor="bio" className="text-sm font-medium">Bio</Label>
             <Textarea
               id="bio"
               name="bio"
@@ -181,10 +186,18 @@ const ProfileSettings = () => {
               onChange={handleInputChange}
               placeholder="Tell us about yourself..."
               rows={3}
+              className="resize-none text-sm min-h-[80px] sm:min-h-[100px]"
             />
+            <p className="text-xs text-muted-foreground">
+              Share a brief description about yourself or your business
+            </p>
           </div>
 
-          <Button onClick={handleSaveBio} disabled={loading} className="w-full">
+          <Button 
+            onClick={handleSaveBio} 
+            disabled={loading} 
+            className="w-full h-10 sm:h-11 text-sm font-medium"
+          >
             <Save size={16} className="mr-2" />
             {loading ? "Saving..." : "Save Bio"}
           </Button>
