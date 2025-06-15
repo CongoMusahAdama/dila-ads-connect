@@ -71,8 +71,8 @@ const MyBookingsModal = () => {
     switch (status) {
       case 'pending':
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
-      case 'accepted':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Accepted</Badge>;
+      case 'approved':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
       case 'rejected':
         return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
       case 'paid':
@@ -236,7 +236,7 @@ const MyBookingsModal = () => {
                     </div>
                   </div>
 
-                  {booking.status === 'accepted' && (
+                  {booking.status === 'approved' && (
                     <div className="pt-4 border-t">
                       <Button
                         onClick={() => handlePayment(booking)}
@@ -245,7 +245,7 @@ const MyBookingsModal = () => {
                         Finalize & Pay - GHS {booking.total_amount.toLocaleString()}
                       </Button>
                       <p className="text-sm text-muted-foreground mt-2 text-center">
-                        Your booking request has been accepted. Complete payment to confirm your booking.
+                        Your booking request has been approved. Complete payment to confirm your booking.
                       </p>
                     </div>
                   )}

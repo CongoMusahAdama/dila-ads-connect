@@ -132,7 +132,7 @@ const BookingRequestsModal = () => {
     }
   }, [open, user]);
 
-  const handleRequestAction = async (requestId: string, action: 'accepted' | 'rejected', responseMessage?: string) => {
+  const handleRequestAction = async (requestId: string, action: 'approved' | 'rejected', responseMessage?: string) => {
     try {
       const { error } = await supabase
         .from('booking_requests')
@@ -148,8 +148,8 @@ const BookingRequestsModal = () => {
       const request = requests.find(r => r.id === requestId);
       
       if (request) {
-        // If accepted, mark billboard as unavailable
-        if (action === 'accepted') {
+        // If approved, mark billboard as unavailable
+        if (action === 'approved') {
           await supabase
             .from('billboards')
             .update({ is_available: false })
@@ -165,7 +165,7 @@ const BookingRequestsModal = () => {
             // Send notification to advertiser
             await supabase.functions.invoke('send-notification', {
               body: {
-                type: action === 'accepted' ? 'booking_accepted' : 'booking_rejected',
+                type: action === 'approved' ? 'booking_accepted' : 'booking_rejected',
                 recipientEmail: authUserData.user.email,
                 billboardName: request.billboards.name,
                 ownerName: 'Billboard Owner'
@@ -197,8 +197,8 @@ const BookingRequestsModal = () => {
     switch (status) {
       case 'pending':
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
-      case 'accepted':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Accepted</Badge>;
+      case 'approved':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
       case 'rejected':
         return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
       default:
@@ -310,7 +310,7 @@ const BookingRequestsModal = () => {
                   {request.status === 'pending' && (
                     <div className="flex gap-2 pt-4 border-t">
                       <Button
-                        onClick={() => handleRequestAction(request.id, 'accepted', 'Your booking request has been accepted!')}
+                        onClick={() => handleRequestAction(request.id, 'approved', 'Your booking request has been approved!')}
                         className="bg-green-600 hover:bg-green-700"
                       >
                         Accept
