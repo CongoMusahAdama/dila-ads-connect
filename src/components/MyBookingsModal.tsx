@@ -70,9 +70,18 @@ const MyBookingsModal = () => {
 
   useEffect(() => {
     if (open && user) {
+      console.log('Modal opened, fetching bookings...');
       fetchMyBookings();
     }
   }, [open, user]);
+
+  // Also fetch bookings when component mounts if user exists
+  useEffect(() => {
+    if (user) {
+      console.log('Component mounted with user, fetching bookings...');
+      fetchMyBookings();
+    }
+  }, [user]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
