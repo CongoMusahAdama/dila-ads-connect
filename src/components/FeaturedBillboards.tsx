@@ -110,6 +110,16 @@ const FeaturedBillboards = () => {
           onClose={handleCloseModal}
           billboard={selectedBillboard}
         />
+        
+        <div className="text-center mt-12">
+          <Button 
+            onClick={() => navigate('/login')}
+            size="lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg font-semibold hover:scale-105 transition-all duration-200"
+          >
+            Login to Book
+          </Button>
+        </div>
       </div>
     </section>
   );

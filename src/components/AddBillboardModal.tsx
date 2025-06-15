@@ -36,9 +36,88 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
     }));
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select a JPEG, JPG, PNG, or WebP image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image file smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      const fileName = `${Date.now()}-${file.name}`;
+      const { data, error } = await supabase.storage
+        .from('billboard-images')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: publicData } = supabase.storage
+        .from('billboard-images')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({
+        ...prev,
+        image_url: publicData.publicUrl
+      }));
+
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const validateImageUrl = (url: string) => {
+    if (!url) return true;
+    try {
+      new URL(url);
+      return /\.(jpg|jpeg|png|webp|gif)$/i.test(url);
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Validate image URL if provided
+    if (formData.image_url && !validateImageUrl(formData.image_url)) {
+      toast({
+        title: "Invalid image URL",
+        description: "Please enter a valid image URL ending with .jpg, .jpeg, .png, .webp, or .gif",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
     
@@ -145,14 +224,64 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image_url">Image URL</Label>
-            <Input
-              id="image_url"
-              name="image_url"
-              placeholder="Enter image URL"
-              value={formData.image_url}
-              onChange={handleInputChange}
-            />
+            <Label>Billboard Image</Label>
+            <Tabs defaultValue="upload" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload">Upload Image</TabsTrigger>
+                <TabsTrigger value="url">Image URL</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="upload" className="space-y-2">
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                  <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <div className="space-y-2">
+                    <Label htmlFor="file-upload" className="cursor-pointer">
+                      <span className="text-sm font-medium text-primary hover:text-primary/80">
+                        Choose image file
+                      </span>
+                      <Input
+                        id="file-upload"
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      JPEG, JPG, PNG, WebP up to 5MB
+                    </p>
+                    {uploading && (
+                      <p className="text-sm text-primary">Uploading...</p>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="url" className="space-y-2">
+                <Input
+                  placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
+                  value={formData.image_url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Must be a valid URL ending with .jpg, .jpeg, .png, .webp, or .gif
+                </p>
+              </TabsContent>
+            </Tabs>
+            
+            {formData.image_url && (
+              <div className="mt-2">
+                <img 
+                  src={formData.image_url} 
+                  alt="Preview" 
+                  className="w-full h-32 object-cover rounded border"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
