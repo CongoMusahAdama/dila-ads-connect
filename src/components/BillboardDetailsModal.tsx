@@ -81,7 +81,7 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
                   Price
                 </div>
                 <div className="text-lg font-semibold text-primary">
-                  GH₵{billboard.price.toLocaleString()}/month
+                  GH₵{billboard.price?.toLocaleString() || '0'}/month
                 </div>
               </div>
               <div className="space-y-1">
@@ -90,7 +90,7 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
                   Views
                 </div>
                 <div className="text-lg font-semibold">
-                  {billboard.views.toLocaleString()}
+                  {billboard.views?.toLocaleString() || '0'}
                 </div>
               </div>
               <div className="space-y-1">
