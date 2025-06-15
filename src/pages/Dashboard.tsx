@@ -11,6 +11,7 @@ import ManageBillboardsModal from "@/components/ManageBillboardsModal";
 import MyBookingsModal from "@/components/MyBookingsModal";
 import ProfileSettings from "@/components/ProfileSettings";
 import { Settings } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const Dashboard = () => {
   const { user, profile, signOut, loading } = useAuth();
@@ -134,6 +135,7 @@ const Dashboard = () => {
                 <Settings size={16} />
                 <span className="hidden lg:inline">Profile</span>
               </Button>
+              <ThemeToggle />
               <Button onClick={handleSignOut} variant="outline" className="text-sm">
                 Logout
               </Button>
@@ -147,6 +149,7 @@ const Dashboard = () => {
               >
                 <Settings size={16} />
               </Button>
+              <ThemeToggle />
               <Button onClick={handleSignOut} variant="outline" size="sm" className="text-xs">
                 Logout
               </Button>
@@ -276,6 +279,7 @@ const Dashboard = () => {
               <Settings size={16} />
               <span className="hidden lg:inline">Profile</span>
             </Button>
+            <ThemeToggle />
             <Button onClick={handleSignOut} variant="outline" className="text-sm">
               Logout
             </Button>
@@ -289,6 +293,7 @@ const Dashboard = () => {
             >
               <Settings size={16} />
             </Button>
+            <ThemeToggle />
             <Button onClick={handleSignOut} variant="outline" size="sm" className="text-xs">
               Logout
             </Button>
