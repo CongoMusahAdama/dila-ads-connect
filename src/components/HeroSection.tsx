@@ -23,14 +23,14 @@ const HeroSection = () => {
                 ? 'translate-y-0 opacity-100' 
                 : 'translate-y-8 opacity-0'
             }`}>
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-foreground leading-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
                 Find Available
                 <br />
                 <span className="text-primary bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
                   Billboards
                 </span>
                 <br />
-                <span className="text-3xl md:text-4xl lg:text-5xl text-muted-foreground font-medium">
+                <span className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-medium">
                   in Ghana
                 </span>
               </h1>
@@ -41,7 +41,7 @@ const HeroSection = () => {
                 ? 'translate-y-0 opacity-100' 
                 : 'translate-y-8 opacity-0'
             }`}>
-              <p className="text-xl lg:text-2xl text-muted-foreground leading-relaxed max-w-xl">
+              <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-xl">
                 Easily connect with billboard owners and book premium ad spaces for your marketing campaigns.
               </p>
             </div>
