@@ -20,15 +20,20 @@ const Signup = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { signUp, user, loading } = useAuth();
+  const { signUp, user, profile, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) {
-      navigate('/dashboard');
+    if (!loading && user && profile) {
+      // Redirect based on user role
+      if (profile.role === 'advertiser') {
+        navigate('/advertiser');
+      } else if (profile.role === 'owner') {
+        navigate('/dashboard');
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, profile]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({

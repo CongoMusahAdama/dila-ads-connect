@@ -14,14 +14,19 @@ const Login = () => {
     password: ""
   });
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, user, loading } = useAuth();
+  const { signIn, user, profile, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (!loading && user) {
-      navigate('/dashboard');
+    if (!loading && user && profile) {
+      // Redirect based on user role
+      if (profile.role === 'advertiser') {
+        navigate('/advertiser');
+      } else if (profile.role === 'owner') {
+        navigate('/dashboard');
+      }
     }
     
     // Auto-fill from signup redirect
@@ -31,7 +36,7 @@ const Login = () => {
     if (email) {
       setFormData(prev => ({ ...prev, email, password: password || '' }));
     }
-  }, [user, loading, navigate, location]);
+  }, [user, profile, loading, navigate, location]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
