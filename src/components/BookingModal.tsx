@@ -33,7 +33,8 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
   const calculateTotal = () => {
     if (!startDate || !endDate) return 0;
     const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    return days * billboard.price_per_day;
+    const pricePerDay = billboard.price_per_day || billboard.price || 0;
+    return days * pricePerDay;
   };
 
   const paystackConfig = {
@@ -56,6 +57,16 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
       return;
     }
 
+    const totalAmount = calculateTotal();
+    if (totalAmount <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please check your booking dates and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
@@ -65,18 +76,19 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
           billboard_id: billboard.id,
           start_date: startDate.toISOString().split('T')[0],
           end_date: endDate.toISOString().split('T')[0],
-          total_amount: calculateTotal(),
+          total_amount: totalAmount,
           message: message || null,
           status: 'pending'
         });
 
       if (error) throw error;
 
-      // Initialize Paystack payment
-      initializePayment({
-        onSuccess: onPaymentSuccess,
-        onClose: onPaymentClose
+      toast({
+        title: "Booking Request Submitted!",
+        description: "Your booking request has been sent to the billboard owner for approval. You'll be notified once approved.",
       });
+      
+      onClose();
       
     } catch (error: any) {
       toast({
@@ -84,6 +96,7 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
@@ -134,7 +147,7 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
           <div className="space-y-2">
             <h3 className="font-semibold">{billboard.name}</h3>
             <p className="text-sm text-muted-foreground">{billboard.location}</p>
-            <p className="text-sm font-medium">GH₵{billboard.price_per_day}/day</p>
+            <p className="text-sm font-medium">GH₵{billboard.price_per_day || billboard.price}/day</p>
           </div>
 
           <div className="space-y-4">
@@ -227,7 +240,7 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
               disabled={!startDate || !endDate || loading}
               className="flex-1"
             >
-              {loading ? "Processing..." : "Book & Pay"}
+              {loading ? "Submitting..." : "Submit Request"}
             </Button>
           </div>
         </div>
