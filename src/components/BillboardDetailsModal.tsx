@@ -31,28 +31,26 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[700px] h-[85vh] max-h-[90vh] p-0 overflow-hidden md:w-[700px] md:h-auto md:max-h-[80vh]">
+      <DialogContent className="w-[95vw] max-w-[600px] h-[85vh] max-h-[90vh] p-0 overflow-hidden flex flex-col">
         {/* Header - Fixed */}
-        <DialogHeader className="px-6 py-4 border-b shrink-0 bg-background/95 backdrop-blur-sm">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2 flex-1 pr-4">
-              <DialogTitle className="text-xl md:text-2xl font-bold leading-tight text-foreground">
-                {billboard.title}
-              </DialogTitle>
-              <div className="flex items-center text-sm md:text-base text-muted-foreground">
-                <MapPin className="h-4 w-4 mr-2" />
-                {billboard.location}
-              </div>
+        <DialogHeader className="px-4 py-4 border-b shrink-0">
+          <div className="space-y-1">
+            <DialogTitle className="text-lg font-bold leading-tight text-foreground">
+              {billboard.title}
+            </DialogTitle>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4 mr-1" />
+              {billboard.location}
             </div>
           </div>
         </DialogHeader>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted">
-          <div className="px-6 py-4 space-y-6">
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 space-y-6">
             {/* Image Gallery */}
-            <div className="space-y-4">
-              <div className="aspect-video bg-muted rounded-xl overflow-hidden shadow-sm">
+            <div className="space-y-3">
+              <div className="aspect-video bg-muted rounded-lg overflow-hidden">
                 <img 
                   src={billboard.images[0] || "/lovable-uploads/9e594151-058a-48ba-aa89-197d1b697959.png"}
                   alt={billboard.title}
@@ -60,9 +58,9 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
                 />
               </div>
               {billboard.images.length > 1 && (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2">
                   {billboard.images.slice(1, 4).map((image, index) => (
-                    <div key={index} className="aspect-square bg-muted rounded-lg overflow-hidden shadow-sm">
+                    <div key={index} className="aspect-square bg-muted rounded-md overflow-hidden">
                       <img 
                         src={image}
                         alt={`${billboard.title} ${index + 2}`}
@@ -75,60 +73,57 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
             </div>
 
             {/* Key Information Grid */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
                 <div className="flex items-center text-sm text-muted-foreground">
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Monthly Price
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  Price
                 </div>
-                <div className="text-2xl md:text-3xl font-bold text-primary">
-                  GH₵{billboard.price.toLocaleString()}
+                <div className="text-lg font-semibold text-primary">
+                  GH₵{billboard.price.toLocaleString()}/month
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <div className="flex items-center text-sm text-muted-foreground">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Monthly Views
+                  <Eye className="h-4 w-4 mr-1" />
+                  Views
                 </div>
-                <div className="text-2xl md:text-3xl font-bold">
+                <div className="text-lg font-semibold">
                   {billboard.views.toLocaleString()}
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="text-sm text-muted-foreground">Billboard Size</div>
-                <div className="text-lg font-semibold">{billboard.size}</div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">Size</div>
+                <div className="font-medium">{billboard.size}</div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <div className="flex items-center text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Status
+                  <Calendar className="h-4 w-4 mr-1" />
+                  Availability
                 </div>
-                <Badge 
-                  variant={billboard.availability === 'Available' ? 'default' : 'secondary'}
-                  className="text-sm px-3 py-1"
-                >
+                <Badge variant={billboard.availability === 'Available' ? 'default' : 'secondary'}>
                   {billboard.availability}
                 </Badge>
               </div>
             </div>
 
-            <Separator className="my-6" />
+            <Separator />
 
             {/* Description */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold">Description</h3>
-              <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
+            <div className="space-y-3">
+              <h3 className="font-semibold">Description</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {billboard.description}
               </p>
             </div>
 
             {/* Features */}
             {billboard.features.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold">Key Features</h3>
+              <div className="space-y-3">
+                <h3 className="font-semibold">Features</h3>
                 <div className="flex flex-wrap gap-2">
                   {billboard.features.map((feature, index) => (
-                    <Badge key={index} variant="outline" className="text-sm px-3 py-1">
+                    <Badge key={index} variant="outline" className="text-xs">
                       {feature}
                     </Badge>
                   ))}
@@ -136,23 +131,23 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
               </div>
             )}
 
-            <Separator className="my-6" />
+            <Separator />
 
             {/* Contact Information */}
-            <div className="space-y-4 mb-4">
-              <h3 className="text-lg font-bold">Contact Information</h3>
-              <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-                <div className="flex items-center">
-                  <span className="font-semibold text-base">{billboard.contact.name}</span>
+            <div className="space-y-3">
+              <h3 className="font-semibold">Contact Owner</h3>
+              <div className="space-y-2">
+                <div className="flex items-center text-sm">
+                  <span className="font-medium min-w-0 flex-1">{billboard.contact.name}</span>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 text-sm">
-                  <div className="flex items-center text-muted-foreground">
-                    <Phone className="h-4 w-4 mr-2" />
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <div className="flex items-center">
+                    <Phone className="h-4 w-4 mr-1" />
                     <span>{billboard.contact.phone}</span>
                   </div>
-                  <div className="flex items-center text-muted-foreground">
-                    <Mail className="h-4 w-4 mr-2" />
-                    <span className="break-all">{billboard.contact.email}</span>
+                  <div className="flex items-center">
+                    <Mail className="h-4 w-4 mr-1" />
+                    <span className="truncate">{billboard.contact.email}</span>
                   </div>
                 </div>
               </div>
@@ -161,12 +156,12 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
         </div>
 
         {/* Footer - Fixed */}
-        <div className="px-6 py-4 border-t shrink-0 bg-background/95 backdrop-blur-sm">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button variant="outline" className="flex-1 h-12" onClick={onClose}>
+        <div className="p-4 pt-2 border-t shrink-0">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" className="flex-1" onClick={onClose}>
               Contact Owner
             </Button>
-            <Button className="flex-1 h-12 bg-primary hover:bg-primary/90">
+            <Button className="flex-1">
               Book Now
             </Button>
           </div>
