@@ -147,7 +147,23 @@ const BillboardSearch = () => {
       });
       return;
     }
-    setSelectedBillboard(billboard);
+    
+    // Format billboard data to match what BookingModal expects
+    const formattedBillboard = {
+      id: billboard.id,
+      name: billboard.name,
+      location: billboard.location,
+      price_per_day: billboard.price_per_day,
+      price: billboard.price_per_day, // Fallback for compatibility
+      description: billboard.description,
+      is_available: billboard.is_available,
+      phone: billboard.phone,
+      email: billboard.email,
+      image_url: billboard.image_url,
+      size: billboard.size
+    };
+    
+    setSelectedBillboard(formattedBillboard);
     setIsBookingModalOpen(true);
   };
 
