@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import BookingRequestsModal from "@/components/BookingRequestsModal";
 import ManageBillboardsModal from "@/components/ManageBillboardsModal";
 import MyBookingsModal from "@/components/MyBookingsModal";
 import ProfileSettings from "@/components/ProfileSettings";
-import { Settings } from "lucide-react";
+import { Settings, Home } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const Dashboard = () => {
@@ -141,6 +142,16 @@ const Dashboard = () => {
               </Button>
             </nav>
             <div className="md:hidden flex items-center space-x-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/')}
+                className="flex items-center gap-1 px-2"
+                title="Home"
+              >
+                <Home size={16} />
+                <span className="text-xs">Home</span>
+              </Button>
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -285,6 +296,16 @@ const Dashboard = () => {
             </Button>
           </nav>
           <div className="md:hidden flex items-center space-x-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1 px-2"
+              title="Home"
+            >
+              <Home size={16} />
+              <span className="text-xs">Home</span>
+            </Button>
             <Button 
               variant="ghost" 
               size="sm"

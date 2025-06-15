@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
+import { Home } from "lucide-react";
 
 const Header = () => {
   const { user, signOut } = useAuth();
@@ -56,6 +57,16 @@ const Header = () => {
           )}
         </nav>
         <div className="md:hidden flex items-center space-x-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-1 px-2"
+            title="Home"
+          >
+            <Home size={16} />
+            <span className="text-xs">Home</span>
+          </Button>
           <ThemeToggle />
           {user ? (
             <Button onClick={handleSignOut} variant="outline" size="sm" className="text-xs">
