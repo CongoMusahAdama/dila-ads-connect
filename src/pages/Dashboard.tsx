@@ -2,11 +2,63 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import AddBillboardModal from "@/components/AddBillboardModal";
+import BookingRequestsModal from "@/components/BookingRequestsModal";
 
 const Dashboard = () => {
   const { user, profile, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const [dashboardStats, setDashboardStats] = useState({
+    activeListings: 0,
+    pendingRequests: 0,
+    occupancyRate: 0
+  });
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
+
+  const fetchDashboardStats = async () => {
+    if (!user || profile?.role !== 'owner') return;
+
+    try {
+      // Fetch active listings count
+      const { count: listingsCount } = await supabase
+        .from('billboards')
+        .select('*', { count: 'exact', head: true })
+        .eq('owner_id', user.id)
+        .eq('is_available', true);
+
+      // Fetch pending requests count
+      const { count: requestsCount } = await supabase
+        .from('booking_requests')
+        .select('*, billboards!inner(*)', { count: 'exact', head: true })
+        .eq('billboards.owner_id', user.id)
+        .eq('status', 'pending');
+
+      setDashboardStats({
+        activeListings: listingsCount || 0,
+        pendingRequests: requestsCount || 0,
+        occupancyRate: 0 // Placeholder for now
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (profile?.role === 'owner') {
+      fetchDashboardStats();
+    }
+  }, [user, profile]);
+
+  const handleBillboardAdded = () => {
+    fetchDashboardStats();
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -62,19 +114,19 @@ const Dashboard = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl font-bold">0</CardTitle>
+                <CardTitle className="text-2xl font-bold">{dashboardStats.activeListings}</CardTitle>
                 <CardDescription>Active Listings</CardDescription>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl font-bold">0</CardTitle>
+                <CardTitle className="text-2xl font-bold">{dashboardStats.pendingRequests}</CardTitle>
                 <CardDescription>Pending Requests</CardDescription>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl font-bold">0%</CardTitle>
+                <CardTitle className="text-2xl font-bold">{dashboardStats.occupancyRate}%</CardTitle>
                 <CardDescription>Occupancy Rate</CardDescription>
               </CardHeader>
             </Card>
@@ -89,9 +141,7 @@ const Dashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">
-                  Add New Billboard
-                </Button>
+                <AddBillboardModal onBillboardAdded={handleBillboardAdded} />
               </CardContent>
             </Card>
 
@@ -103,9 +153,7 @@ const Dashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full">
-                  View All Requests
-                </Button>
+                <BookingRequestsModal />
               </CardContent>
             </Card>
           </div>
