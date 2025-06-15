@@ -80,21 +80,21 @@ const Advertiser = () => {
       <Header />
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Welcome Section with Profile */}
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Avatar className="w-16 h-16">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <Avatar className="w-12 h-12 sm:w-16 sm:h-16">
               <AvatarImage src={profile.avatar_url || ''} />
-              <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
+              <AvatarFallback className="text-sm sm:text-lg">{getInitials()}</AvatarFallback>
             </Avatar>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground break-words">
                 Welcome back, {getDisplayName()}!
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm sm:text-base mt-1">
                 Manage your billboard bookings and discover new advertising opportunities.
               </p>
               {profile.bio && (
-                <p className="text-sm text-muted-foreground mt-1 italic">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1 italic break-words">
                   "{profile.bio}"
                 </p>
               )}
@@ -103,49 +103,51 @@ const Advertiser = () => {
           <Button 
             variant="outline" 
             onClick={() => setShowProfileSettings(!showProfileSettings)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-sm sm:text-base shrink-0"
+            size="sm"
           >
             <Settings size={16} />
-            Profile Settings
+            <span className="hidden sm:inline">Profile Settings</span>
+            <span className="sm:hidden">Profile</span>
           </Button>
         </div>
 
         {showProfileSettings && (
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <ProfileSettings />
           </div>
         )}
 
         {/* Dashboard Grid */}
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
           {/* Main Content Area */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             {/* Find Billboards Section */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   Find Billboards
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   Search and filter available billboards for your advertising campaigns.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <BillboardSearch />
               </CardContent>
             </Card>
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Quick Stats */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Quick Overview</CardTitle>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base sm:text-lg">Quick Overview</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-2">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2">
                     Your booking status and activity will appear here
                   </p>
                 </div>
@@ -154,10 +156,10 @@ const Advertiser = () => {
           </div>
         </div>
 
-        <Separator className="my-8" />
+        <Separator className="my-6 sm:my-8" />
 
         {/* Bookings Section */}
-        <div className="mt-8">
+        <div className="mt-6 sm:mt-8">
           <BookingsList />
         </div>
       </div>

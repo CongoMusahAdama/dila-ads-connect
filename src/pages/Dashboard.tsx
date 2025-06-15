@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,51 +114,63 @@ const Dashboard = () => {
               <div className="w-8 h-8 bg-secondary rounded-md flex items-center justify-center">
                 <span className="font-bold text-secondary-foreground text-sm">D</span>
               </div>
-              <span className="font-bold text-xl">DilaAds</span>
-              <span className="text-muted-foreground">Owner Dashboard</span>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                <span className="font-bold text-lg sm:text-xl">DilaAds</span>
+                <span className="text-muted-foreground text-xs sm:text-sm">Owner Dashboard</span>
+              </div>
             </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Button variant="ghost" onClick={() => navigate('/')}>
+            <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
+              <Button variant="ghost" onClick={() => navigate('/')} className="text-sm">
                 Home
               </Button>
-              <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+              <Button variant="ghost" onClick={() => navigate('/dashboard')} className="text-sm">
                 Dashboard
               </Button>
               <Button 
                 variant="ghost" 
                 onClick={() => setShowProfileSettings(!showProfileSettings)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-sm"
               >
                 <Settings size={16} />
-                Profile
+                <span className="hidden lg:inline">Profile</span>
               </Button>
-              <Button onClick={handleSignOut} variant="outline">
+              <Button onClick={handleSignOut} variant="outline" className="text-sm">
                 Logout
               </Button>
             </nav>
-            <Button onClick={handleSignOut} variant="outline" className="md:hidden">
-              Logout
-            </Button>
+            <div className="md:hidden flex items-center space-x-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowProfileSettings(!showProfileSettings)}
+                className="p-2"
+              >
+                <Settings size={16} />
+              </Button>
+              <Button onClick={handleSignOut} variant="outline" size="sm" className="text-xs">
+                Logout
+              </Button>
+            </div>
           </div>
         </header>
 
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-6 sm:py-8">
           {/* Welcome Section with Profile */}
-          <div className="mb-8 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Avatar className="w-16 h-16">
+          <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <Avatar className="w-12 h-12 sm:w-16 sm:h-16">
                 <AvatarImage src={profile.avatar_url || ''} />
-                <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
+                <AvatarFallback className="text-sm sm:text-lg">{getInitials()}</AvatarFallback>
               </Avatar>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground break-words">
                   Welcome back, {getDisplayName()}!
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-sm sm:text-base mt-1">
                   Manage your billboard listings and bookings
                 </p>
                 {profile.bio && (
-                  <p className="text-sm text-muted-foreground mt-1 italic">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 italic break-words">
                     "{profile.bio}"
                   </p>
                 )}
@@ -168,65 +179,65 @@ const Dashboard = () => {
           </div>
 
           {showProfileSettings && (
-            <div className="mb-8">
+            <div className="mb-6 sm:mb-8">
               <ProfileSettings />
             </div>
           )}
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold">{dashboardStats.activeListings}</CardTitle>
-                <CardDescription>Active Listings</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.activeListings}</CardTitle>
+                <CardDescription className="text-sm">Active Listings</CardDescription>
               </CardHeader>
             </Card>
             <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold">{dashboardStats.pendingRequests}</CardTitle>
-                <CardDescription>Pending Requests</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.pendingRequests}</CardTitle>
+                <CardDescription className="text-sm">Pending Requests</CardDescription>
               </CardHeader>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold">{dashboardStats.occupancyRate}%</CardTitle>
-                <CardDescription>Occupancy Rate</CardDescription>
+            <Card className="sm:col-span-2 lg:col-span-1">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.occupancyRate}%</CardTitle>
+                <CardDescription className="text-sm">Occupancy Rate</CardDescription>
               </CardHeader>
             </Card>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Billboard Listings</CardTitle>
-                <CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg sm:text-xl">Billboard Listings</CardTitle>
+                <CardDescription className="text-sm">
                   Add new billboards to your inventory
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-3">
                 <AddBillboardModal onBillboardAdded={handleBillboardAdded} />
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Manage Billboards</CardTitle>
-                <CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg sm:text-xl">Manage Billboards</CardTitle>
+                <CardDescription className="text-sm">
                   Edit and manage your existing billboards
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-3">
                 <ManageBillboardsModal />
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Booking Requests</CardTitle>
-                <CardDescription>
+            <Card className="sm:col-span-2 lg:col-span-1">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg sm:text-xl">Booking Requests</CardTitle>
+                <CardDescription className="text-sm">
                   View and manage incoming booking requests
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-3">
                 <BookingRequestsModal />
               </CardContent>
             </Card>
@@ -245,51 +256,63 @@ const Dashboard = () => {
             <div className="w-8 h-8 bg-secondary rounded-md flex items-center justify-center">
               <span className="font-bold text-secondary-foreground text-sm">D</span>
             </div>
-            <span className="font-bold text-xl">DilaAds</span>
-            <span className="text-muted-foreground">Advertiser Dashboard</span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+              <span className="font-bold text-lg sm:text-xl">DilaAds</span>
+              <span className="text-muted-foreground text-xs sm:text-sm">Advertiser Dashboard</span>
+            </div>
           </div>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Button variant="ghost" onClick={() => navigate('/')}>
+          <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
+            <Button variant="ghost" onClick={() => navigate('/')} className="text-sm">
               Home
             </Button>
-            <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+            <Button variant="ghost" onClick={() => navigate('/dashboard')} className="text-sm">
               Dashboard
             </Button>
             <Button 
               variant="ghost" 
               onClick={() => setShowProfileSettings(!showProfileSettings)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-sm"
             >
               <Settings size={16} />
-              Profile
+              <span className="hidden lg:inline">Profile</span>
             </Button>
-            <Button onClick={handleSignOut} variant="outline">
+            <Button onClick={handleSignOut} variant="outline" className="text-sm">
               Logout
             </Button>
           </nav>
-          <Button onClick={handleSignOut} variant="outline" className="md:hidden">
-            Logout
-          </Button>
+          <div className="md:hidden flex items-center space-x-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setShowProfileSettings(!showProfileSettings)}
+              className="p-2"
+            >
+              <Settings size={16} />
+            </Button>
+            <Button onClick={handleSignOut} variant="outline" size="sm" className="text-xs">
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 sm:py-8">
         {/* Welcome Section with Profile */}
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Avatar className="w-16 h-16">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <Avatar className="w-12 h-12 sm:w-16 sm:h-16">
               <AvatarImage src={profile.avatar_url || ''} />
-              <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
+              <AvatarFallback className="text-sm sm:text-lg">{getInitials()}</AvatarFallback>
             </Avatar>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground break-words">
                 Welcome back, {getDisplayName()}!
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm sm:text-base mt-1">
                 Find and book billboard spaces for your campaigns
               </p>
               {profile.bio && (
-                <p className="text-sm text-muted-foreground mt-1 italic">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1 italic break-words">
                   "{profile.bio}"
                 </p>
               )}
@@ -298,34 +321,34 @@ const Dashboard = () => {
         </div>
 
         {showProfileSettings && (
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <ProfileSettings />
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Find Billboards</CardTitle>
-              <CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg sm:text-xl">Find Billboards</CardTitle>
+              <CardDescription className="text-sm">
                 Browse available billboard spaces in Ghana
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button className="w-full" onClick={() => navigate('/advertiser')}>
+            <CardContent className="pt-3">
+              <Button className="w-full text-sm sm:text-base" onClick={() => navigate('/advertiser')}>
                 Browse Billboards
               </Button>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>My Bookings</CardTitle>
-              <CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg sm:text-xl">My Bookings</CardTitle>
+              <CardDescription className="text-sm">
                 Track your booking requests and payments
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-3">
               <MyBookingsModal />
             </CardContent>
           </Card>
