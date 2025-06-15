@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -125,39 +126,40 @@ const ProfileSettings = () => {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="text-center pb-4">
-        <CardTitle className="text-lg sm:text-xl">Profile Settings</CardTitle>
-        <CardDescription className="text-sm px-2">
+    <Card className="w-full max-w-2xl mx-auto shadow-lg border-2">
+      <CardHeader className="text-center pb-6 space-y-2">
+        <CardTitle className="text-xl sm:text-2xl font-bold text-card-foreground">Profile Settings</CardTitle>
+        <CardDescription className="text-sm sm:text-base px-2 max-w-lg mx-auto">
           Manage your profile picture and bio. Your name is set from registration and cannot be changed here.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6 px-4 sm:px-6">
+      <CardContent className="space-y-8 px-4 sm:px-8 pb-8">
         {/* Display Name (Read-only) */}
-        <div className="text-center">
-          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2 break-words">
+        <div className="text-center space-y-2">
+          <h3 className="text-lg sm:text-xl font-bold text-card-foreground break-words px-2">
             {getDisplayName()}
           </h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground font-medium">
             Your registered name
           </p>
         </div>
 
         {/* Avatar Section */}
-        <div className="flex flex-col items-center space-y-4">
-          <div className="relative">
-            <Avatar className="w-20 h-20 sm:w-24 sm:h-24">
-              <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback className="text-base sm:text-lg">{getInitials()}</AvatarFallback>
+        <div className="flex flex-col items-center space-y-6">
+          <div className="relative group">
+            <Avatar className="w-24 h-24 sm:w-28 sm:h-28 ring-4 ring-primary/20 transition-all duration-200 group-hover:ring-primary/40">
+              <AvatarImage src={profile?.avatar_url || ''} className="object-cover" />
+              <AvatarFallback className="text-lg sm:text-xl font-bold bg-primary/10 text-primary">
+                {getInitials()}
+              </AvatarFallback>
             </Avatar>
             <Button
               size="sm"
-              className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 rounded-full h-7 w-7 sm:h-8 sm:w-8 p-0 shadow-lg"
+              className="absolute -bottom-2 -right-2 rounded-full h-10 w-10 p-0 shadow-lg ring-2 ring-background hover:scale-110 transition-all duration-200"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
             >
-              <Camera size={14} className="sm:hidden" />
-              <Camera size={16} className="hidden sm:block" />
+              <Camera size={18} />
             </Button>
           </div>
           <input
@@ -168,38 +170,47 @@ const ProfileSettings = () => {
             className="hidden"
           />
           {uploading && (
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-              <p className="text-xs sm:text-sm text-muted-foreground">Uploading...</p>
+            <div className="flex items-center space-x-3 bg-muted/50 px-4 py-2 rounded-full">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+              <p className="text-sm font-medium text-muted-foreground">Uploading...</p>
             </div>
           )}
         </div>
 
         {/* Bio Section */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="bio" className="text-sm font-medium">Bio</Label>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <Label htmlFor="bio" className="text-base font-semibold text-card-foreground flex items-center gap-2">
+              Bio
+            </Label>
             <Textarea
               id="bio"
               name="bio"
               value={formData.bio}
               onChange={handleInputChange}
-              placeholder="Tell us about yourself..."
-              rows={3}
-              className="resize-none text-sm min-h-[80px] sm:min-h-[100px]"
+              placeholder="Tell us about yourself or your business..."
+              rows={4}
+              className="resize-none text-sm sm:text-base min-h-[120px] border-2 focus:border-primary transition-colors bg-background/50"
             />
-            <p className="text-xs text-muted-foreground">
-              Share a brief description about yourself or your business
+            <p className="text-xs sm:text-sm text-muted-foreground px-1">
+              Share a brief description about yourself or your business (optional)
             </p>
           </div>
 
           <Button 
             onClick={handleSaveBio} 
             disabled={loading} 
-            className="w-full h-10 sm:h-11 text-sm font-medium"
+            className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02]"
           >
-            <Save size={16} className="mr-2" />
-            {loading ? "Saving..." : "Save Bio"}
+            <Save size={18} className="mr-2" />
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent"></div>
+                Saving...
+              </span>
+            ) : (
+              "Save Bio"
+            )}
           </Button>
         </div>
       </CardContent>

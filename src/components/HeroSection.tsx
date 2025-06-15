@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, Search } from "lucide-react";
@@ -56,7 +57,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="py-16 lg:py-24 bg-gradient-to-b from-background to-muted/30 min-h-[85vh] flex items-center">
+    <section className="py-16 lg:py-24 bg-gradient-to-b from-background via-background to-muted/20 min-h-[85vh] flex items-center">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left Content */}
@@ -66,14 +67,14 @@ const HeroSection = () => {
                 ? 'translate-y-0 opacity-100' 
                 : 'translate-y-8 opacity-0'
             }`}>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-                Find Available
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                <span className="text-foreground drop-shadow-sm">Find Available</span>
                 <br />
-                <span className="text-secondary bg-gradient-to-r from-secondary to-secondary/80 bg-clip-text text-transparent animate-pulse">
+                <span className="text-secondary font-extrabold drop-shadow-lg bg-gradient-to-r from-secondary via-secondary to-secondary/80 bg-clip-text text-transparent">
                   Billboards
                 </span>
                 <br />
-                <span className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-medium">
+                <span className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-medium drop-shadow-sm">
                   in Ghana
                 </span>
               </h1>
@@ -84,7 +85,7 @@ const HeroSection = () => {
                 ? 'translate-y-0 opacity-100' 
                 : 'translate-y-8 opacity-0'
             }`}>
-              <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-xl">
+              <p className="text-lg lg:text-xl text-foreground/80 leading-relaxed max-w-xl font-medium">
                 Easily connect with billboard owners and book premium ad spaces for your marketing campaigns.
               </p>
             </div>
@@ -99,7 +100,7 @@ const HeroSection = () => {
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
                   <Input 
                     placeholder="Search billboard by name (e.g., Premium Billboard)" 
-                    className="pl-12 h-14 text-lg border-2 focus:border-primary transition-colors"
+                    className="pl-12 h-14 text-lg border-2 focus:border-primary transition-colors bg-background/50 backdrop-blur-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -108,7 +109,7 @@ const HeroSection = () => {
                 <Button 
                   onClick={handleSearch}
                   disabled={isSearching}
-                  className="h-14 px-8 text-lg bg-secondary hover:bg-secondary/90 hover:scale-105 transition-all duration-200"
+                  className="h-14 px-8 text-lg bg-secondary hover:bg-secondary/90 hover:scale-105 transition-all duration-200 font-semibold shadow-lg"
                 >
                   <Search className="mr-2 h-5 w-5" />
                   {isSearching ? "Searching..." : "Search Billboards"}
@@ -119,8 +120,8 @@ const HeroSection = () => {
               {showResults && (
                 <div className="mt-6 max-w-xl mx-auto lg:mx-0">
                   {searchResults.length > 0 ? (
-                    <div className="bg-background/80 backdrop-blur-sm rounded-lg border p-4 space-y-3">
-                      <h3 className="font-semibold text-foreground">Found {searchResults.length} billboard(s):</h3>
+                    <div className="bg-card/95 backdrop-blur-sm rounded-lg border shadow-lg p-4 space-y-3">
+                      <h3 className="font-semibold text-card-foreground">Found {searchResults.length} billboard(s):</h3>
                       {searchResults.map((billboard) => (
                         <div key={billboard.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                           <div>
@@ -131,7 +132,7 @@ const HeroSection = () => {
                           <Button 
                             size="sm" 
                             onClick={() => navigate('/login')}
-                            className="bg-primary hover:bg-primary/90"
+                            className="bg-primary hover:bg-primary/90 shadow-md"
                           >
                             Book Now
                           </Button>
@@ -139,7 +140,7 @@ const HeroSection = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-background/80 backdrop-blur-sm rounded-lg border p-4 text-center">
+                    <div className="bg-card/95 backdrop-blur-sm rounded-lg border shadow-lg p-4 text-center">
                       <p className="text-muted-foreground">
                         No billboard matched your search. Try a different name or location.
                       </p>
@@ -157,19 +158,19 @@ const HeroSection = () => {
               : 'translate-y-8 opacity-0 scale-95'
           }`}>
             <div className="relative w-full max-w-2xl">
-              <div className="relative overflow-hidden rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105">
+              <div className="relative overflow-hidden rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 ring-1 ring-border/50">
                 <img 
                   src="/lovable-uploads/9e594151-058a-48ba-aa89-197d1b697959.png"
                   alt="SafeDrive Billboard Example - Premium advertising space"
                   className="w-full h-auto object-cover"
                   style={{ aspectRatio: '16/10' }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
               </div>
               
               {/* Decorative elements */}
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary/10 rounded-full blur-xl animate-pulse"></div>
-              <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-secondary/10 rounded-full blur-lg animate-pulse delay-1000"></div>
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+              <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-secondary/20 rounded-full blur-lg animate-pulse delay-1000"></div>
             </div>
           </div>
         </div>
