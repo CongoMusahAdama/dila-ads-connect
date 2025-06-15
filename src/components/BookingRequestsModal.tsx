@@ -41,30 +41,79 @@ const BookingRequestsModal = () => {
     
     setLoading(true);
     try {
+      // First get booking requests for billboards owned by current user
       const { data, error } = await supabase
         .from('booking_requests')
         .select(`
-          *,
-          billboards!inner (
-            name, 
-            location, 
-            owner_id
-          ),
-          profiles!booking_requests_advertiser_id_fkey (
-            first_name, 
-            last_name
-          )
+          id,
+          billboard_id,
+          advertiser_id,
+          start_date,
+          end_date,
+          total_amount,
+          status,
+          message,
+          response_message,
+          created_at
         `)
-        .eq('billboards.owner_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching booking requests:', error);
         throw error;
       }
-      
-      console.log('Fetched booking requests:', data);
-      setRequests(data || []);
+
+      if (!data || data.length === 0) {
+        console.log('No booking requests found');
+        setRequests([]);
+        return;
+      }
+
+      // Get billboard details and filter by owner
+      const billboardIds = [...new Set(data.map(req => req.billboard_id))];
+      const { data: billboardsData } = await supabase
+        .from('billboards')
+        .select('id, name, location, owner_id')
+        .in('id', billboardIds);
+
+      // Filter requests for current user's billboards
+      const userBillboards = billboardsData?.filter(b => b.owner_id === user.id) || [];
+      const userBillboardIds = userBillboards.map(b => b.id);
+      const userRequests = data.filter(req => userBillboardIds.includes(req.billboard_id));
+
+      if (userRequests.length === 0) {
+        console.log('No booking requests for user billboards');
+        setRequests([]);
+        return;
+      }
+
+      // Get advertiser profiles
+      const advertiserIds = [...new Set(userRequests.map(req => req.advertiser_id))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', advertiserIds);
+
+      // Combine all data
+      const enrichedRequests = userRequests.map(request => {
+        const billboard = billboardsData?.find(b => b.id === request.billboard_id);
+        const profile = profilesData?.find(p => p.user_id === request.advertiser_id);
+        
+        return {
+          ...request,
+          billboards: {
+            name: billboard?.name || 'Unknown Billboard',
+            location: billboard?.location || 'Unknown Location'
+          },
+          profiles: {
+            first_name: profile?.first_name || 'Unknown',
+            last_name: profile?.last_name || 'User'
+          }
+        };
+      });
+
+      console.log('Enriched booking requests:', enrichedRequests);
+      setRequests(enrichedRequests);
     } catch (error: any) {
       console.error('Error in fetchBookingRequests:', error);
       toast({
@@ -109,27 +158,19 @@ const BookingRequestsModal = () => {
 
         // Get advertiser email for notification
         try {
-          const { data: advertiserData } = await supabase
-            .from('profiles')
-            .select('user_id')
-            .eq('id', request.advertiser_id)
-            .single();
-
-          if (advertiserData) {
-            const { data: userData } = await supabase.auth.admin.getUserById(advertiserData.user_id);
-            const advertiserEmail = userData.user?.email;
-
-            if (advertiserEmail) {
-              // Send notification to advertiser
-              await supabase.functions.invoke('send-notification', {
-                body: {
-                  type: action === 'accepted' ? 'booking_accepted' : 'booking_rejected',
-                  recipientEmail: advertiserEmail,
-                  billboardName: request.billboards.name,
-                  ownerName: 'Billboard Owner'
-                }
-              });
-            }
+          // Get advertiser auth user data to get email
+          const { data: authUserData, error: authError } = await supabase.auth.admin.getUserById(request.advertiser_id);
+          
+          if (!authError && authUserData.user?.email) {
+            // Send notification to advertiser
+            await supabase.functions.invoke('send-notification', {
+              body: {
+                type: action === 'accepted' ? 'booking_accepted' : 'booking_rejected',
+                recipientEmail: authUserData.user.email,
+                billboardName: request.billboards.name,
+                ownerName: 'Billboard Owner'
+              }
+            });
           }
         } catch (notificationError) {
           console.error('Failed to send notification:', notificationError);
