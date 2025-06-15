@@ -99,10 +99,15 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
     try {
       await supabase
         .from('booking_requests')
-        .update({ status: 'paid' })
+        .update({ 
+          status: 'paid',
+          response_message: 'Payment completed successfully'
+        })
         .eq('advertiser_id', user?.id)
         .eq('billboard_id', billboard.id)
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1);
     } catch (error) {
       console.error('Error updating booking status:', error);
     }
@@ -114,8 +119,7 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
     setLoading(false);
     toast({
       title: "Payment Cancelled",
-      description: "Your booking request is still pending. You can complete payment later.",
-      variant: "destructive",
+      description: "Your booking request was saved and is pending owner approval.",
     });
   };
 

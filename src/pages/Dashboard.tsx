@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AddBillboardModal from "@/components/AddBillboardModal";
 import BookingRequestsModal from "@/components/BookingRequestsModal";
 import ManageBillboardsModal from "@/components/ManageBillboardsModal";
+import MyBookingsModal from "@/components/MyBookingsModal";
 
 const Dashboard = () => {
   const { user, profile, signOut, loading } = useAuth();
@@ -269,19 +270,33 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Find Billboards</CardTitle>
-            <CardDescription>
-              Browse available billboard spaces in Ghana
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full" onClick={() => navigate('/advertiser')}>
-              Browse Billboards
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Find Billboards</CardTitle>
+              <CardDescription>
+                Browse available billboard spaces in Ghana
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => navigate('/advertiser')}>
+                Browse Billboards
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>My Bookings</CardTitle>
+              <CardDescription>
+                Track your booking requests and payments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MyBookingsModal />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
