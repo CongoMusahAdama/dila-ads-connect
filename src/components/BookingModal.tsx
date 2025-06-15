@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { usePaystackPayment } from 'react-paystack';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -34,6 +35,16 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
     const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     return days * billboard.price_per_day;
   };
+
+  const paystackConfig = {
+    reference: new Date().getTime().toString(),
+    email: user?.email || '',
+    amount: Math.round(calculateTotal() * 100), // Convert to kobo (GHS smallest unit)
+    publicKey: 'pk_live_a9e86ee55c4a014e1affce905ad59f11d9fe3bce',
+    currency: 'GHS',
+  };
+
+  const initializePayment = usePaystackPayment(paystackConfig);
 
   const handleBookingSubmit = async () => {
     if (!startDate || !endDate || !user) {
@@ -61,21 +72,51 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
 
       if (error) throw error;
 
-      toast({
-        title: "Booking Request Sent",
-        description: "Your booking request has been sent. Payment integration coming soon!",
+      // Initialize Paystack payment
+      initializePayment({
+        onSuccess: onPaymentSuccess,
+        onClose: onPaymentClose
       });
       
-      onClose();
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
+  };
+
+  const onPaymentSuccess = async (reference: any) => {
+    setLoading(false);
+    toast({
+      title: "Payment Successful!",
+      description: `Your booking has been confirmed. Reference: ${reference.reference}`,
+    });
+    
+    // Update booking status to paid
+    try {
+      await supabase
+        .from('booking_requests')
+        .update({ status: 'paid' })
+        .eq('advertiser_id', user?.id)
+        .eq('billboard_id', billboard.id)
+        .eq('status', 'pending');
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+    }
+    
+    onClose();
+  };
+
+  const onPaymentClose = () => {
+    setLoading(false);
+    toast({
+      title: "Payment Cancelled",
+      description: "Your booking request is still pending. You can complete payment later.",
+      variant: "destructive",
+    });
   };
 
   return (
@@ -163,7 +204,7 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
                 <div className="flex justify-between items-center">
                   <span className="font-medium">Total Amount:</span>
                   <span className="text-lg font-bold text-primary">
-                    GH₵{calculateTotal().toLocaleString()}
+                    GHS {calculateTotal().toLocaleString()}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -182,7 +223,7 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
               disabled={!startDate || !endDate || loading}
               className="flex-1"
             >
-              {loading ? "Sending..." : "Send Request"}
+              {loading ? "Processing..." : "Book & Pay"}
             </Button>
           </div>
         </div>
