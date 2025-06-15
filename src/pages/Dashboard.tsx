@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AddBillboardModal from "@/components/AddBillboardModal";
 import BookingRequestsModal from "@/components/BookingRequestsModal";
+import ManageBillboardsModal from "@/components/ManageBillboardsModal";
 
 const Dashboard = () => {
   const { user, profile, signOut, loading } = useAuth();
@@ -186,16 +187,28 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Billboard Listings</CardTitle>
                 <CardDescription>
-                  Add new billboards or edit existing ones
+                  Add new billboards to your inventory
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <AddBillboardModal onBillboardAdded={handleBillboardAdded} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Manage Billboards</CardTitle>
+                <CardDescription>
+                  Edit and manage your existing billboards
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ManageBillboardsModal />
               </CardContent>
             </Card>
 
