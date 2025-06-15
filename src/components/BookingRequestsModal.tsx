@@ -107,7 +107,7 @@ const BookingRequestsModal = () => {
           },
           profiles: {
             first_name: profile?.first_name || 'Unknown',
-            last_name: profile?.last_name || 'User'
+            last_name: profile?.last_name || ''
           }
         };
       });
@@ -256,11 +256,16 @@ const BookingRequestsModal = () => {
                 <CardContent className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Advertiser:</span>
-                        <span>{request.profiles.first_name} {request.profiles.last_name}</span>
-                      </div>
+                       <div className="flex items-center gap-2">
+                         <User className="h-4 w-4 text-muted-foreground" />
+                         <span className="font-medium">Advertiser:</span>
+                         <span>
+                           {request.profiles.first_name && request.profiles.last_name 
+                             ? `${request.profiles.first_name} ${request.profiles.last_name}`.trim()
+                             : request.profiles.first_name || 'Unknown User'
+                           }
+                         </span>
+                       </div>
                       
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />

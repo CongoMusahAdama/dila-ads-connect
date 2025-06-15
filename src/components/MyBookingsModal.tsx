@@ -39,6 +39,7 @@ const MyBookingsModal = () => {
     
     setLoading(true);
     try {
+      console.log('Fetching bookings for user:', user.id);
       const { data, error } = await supabase
         .from('booking_requests')
         .select(`
@@ -48,9 +49,15 @@ const MyBookingsModal = () => {
         .eq('advertiser_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching bookings:', error);
+        throw error;
+      }
+      
+      console.log('Fetched bookings:', data);
       setBookings(data || []);
     } catch (error: any) {
+      console.error('Error in fetchMyBookings:', error);
       toast({
         title: "Error",
         description: "Failed to fetch your bookings",
