@@ -26,7 +26,7 @@ const HeroSection = () => {
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
                 Find Available
                 <br />
-                <span className="text-primary bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                <span className="text-secondary bg-gradient-to-r from-secondary to-secondary/80 bg-clip-text text-transparent animate-pulse">
                   Billboards
                 </span>
                 <br />
@@ -59,7 +59,7 @@ const HeroSection = () => {
                     className="pl-12 h-14 text-lg border-2 focus:border-primary transition-colors"
                   />
                 </div>
-                <Button className="h-14 px-8 text-lg bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200">
+                <Button className="h-14 px-8 text-lg bg-secondary hover:bg-secondary/90 hover:scale-105 transition-all duration-200">
                   <Search className="mr-2 h-5 w-5" />
                   Search Billboards
                 </Button>
