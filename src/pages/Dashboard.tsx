@@ -10,6 +10,14 @@ import BookingRequestsModal from "@/components/BookingRequestsModal";
 const Dashboard = () => {
   const { user, profile, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const [billboards, setBillboards] = useState([]);
+  const [stats, setStats] = useState({
+    activeBillboards: 0,
+    pendingRequests: 0,
+    occupancyRate: 0
+  });
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showRequestsModal, setShowRequestsModal] = useState(false);
   const [dashboardStats, setDashboardStats] = useState({
     activeListings: 0,
     pendingRequests: 0,
@@ -21,6 +29,39 @@ const Dashboard = () => {
       navigate('/login');
     }
   }, [user, loading, navigate]);
+
+  const fetchOwnerStats = async () => {
+    if (!user) return;
+
+    // Fetch billboards
+    const { data: billboardsData } = await supabase
+      .from('billboards')
+      .select('*')
+      .eq('owner_id', user.id);
+
+    // Fetch pending requests
+    const { data: requestsData } = await supabase
+      .from('booking_requests')
+      .select(`
+        *,
+        billboards!inner (owner_id)
+      `)
+      .eq('billboards.owner_id', user.id)
+      .eq('status', 'pending');
+
+    setBillboards(billboardsData || []);
+    setStats({
+      activeBillboards: billboardsData?.length || 0,
+      pendingRequests: requestsData?.length || 0,
+      occupancyRate: 0 // Calculate based on bookings
+    });
+  };
+
+  useEffect(() => {
+    if (user && profile?.role === 'owner') {
+      fetchOwnerStats();
+    }
+  }, [user, profile]);
 
   const fetchDashboardStats = async () => {
     if (!user || profile?.role !== 'owner') return;
@@ -158,6 +199,7 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
+
       </div>
     );
   }

@@ -3,19 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AddBillboardModalProps {
   onBillboardAdded: () => void;
 }
 
 const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -24,8 +21,10 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
     description: "",
     image_url: ""
   });
-  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
@@ -43,19 +42,15 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
     const { error } = await supabase
       .from('billboards')
       .insert({
-        owner_id: user.id,
-        name: formData.name,
-        location: formData.location,
-        size: formData.size,
+        ...formData,
         price_per_day: parseFloat(formData.price_per_day),
-        description: formData.description,
-        image_url: formData.image_url || null
+        owner_id: user.id
       });
 
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to add billboard. Please try again.",
+        description: error.message,
         variant: "destructive",
       });
     } else {
@@ -71,8 +66,8 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
         description: "",
         image_url: ""
       });
-      setOpen(false);
       onBillboardAdded();
+      setOpen(false);
     }
     
     setLoading(false);
@@ -81,63 +76,79 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full">
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Billboard
-        </Button>
+        <Button className="w-full">Add New Billboard</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Billboard</DialogTitle>
+          <DialogDescription>
+            Fill in the details for your new billboard listing.
+          </DialogDescription>
         </DialogHeader>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Billboard Name</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="Enter billboard name"
-              required
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Billboard Name</Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="Enter billboard name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                name="location"
+                placeholder="Enter location"
+                value={formData.location}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="size">Size</Label>
+              <Input
+                id="size"
+                name="size"
+                placeholder="e.g., 48 x 14 ft"
+                value={formData.size}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="price_per_day">Price per Day (GHS)</Label>
+              <Input
+                id="price_per_day"
+                name="price_per_day"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={formData.price_per_day}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="image_url">Image URL</Label>
             <Input
-              id="location"
-              name="location"
-              value={formData.location}
+              id="image_url"
+              name="image_url"
+              placeholder="Enter image URL"
+              value={formData.image_url}
               onChange={handleInputChange}
-              placeholder="Enter location"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="size">Size</Label>
-            <Input
-              id="size"
-              name="size"
-              value={formData.size}
-              onChange={handleInputChange}
-              placeholder="e.g., 20ft x 10ft"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="price_per_day">Price per Day (GHS)</Label>
-            <Input
-              id="price_per_day"
-              name="price_per_day"
-              type="number"
-              step="0.01"
-              value={formData.price_per_day}
-              onChange={handleInputChange}
-              placeholder="Enter price per day"
-              required
             />
           </div>
 
@@ -146,32 +157,15 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
             <Textarea
               id="description"
               name="description"
+              placeholder="Enter billboard description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Enter billboard description"
               rows={3}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="image_url">Image URL (Optional)</Label>
-            <Input
-              id="image_url"
-              name="image_url"
-              type="url"
-              value={formData.image_url}
-              onChange={handleInputChange}
-              placeholder="Enter image URL"
-            />
-          </div>
-
           <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={loading}
-            >
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
