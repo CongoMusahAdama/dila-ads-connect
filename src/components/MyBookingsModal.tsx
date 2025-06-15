@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +25,7 @@ interface Booking {
     location: string;
     size: string;
     image_url: string;
-  };
+  } | null;
 }
 
 const MyBookingsModal = () => {
@@ -187,21 +188,23 @@ const MyBookingsModal = () => {
               <Card key={booking.id} className="w-full">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{booking.billboards.name}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {booking.billboards?.name || 'Billboard (Details Unavailable)'}
+                    </CardTitle>
                     {getStatusBadge(booking.status)}
                   </div>
                   <CardDescription className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    {booking.billboards.location} • {booking.billboards.size}
+                    {booking.billboards?.location || 'Location not available'} • {booking.billboards?.size || 'Size not available'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      {booking.billboards.image_url && (
+                      {booking.billboards?.image_url && (
                         <img
                           src={booking.billboards.image_url}
-                          alt={booking.billboards.name}
+                          alt={booking.billboards.name || 'Billboard'}
                           className="w-full h-32 object-cover rounded border"
                         />
                       )}
