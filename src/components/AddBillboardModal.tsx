@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +22,9 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
     size: "",
     price_per_day: "",
     description: "",
-    image_url: ""
+    image_url: "",
+    phone: "",
+    email: ""
   });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -146,7 +149,9 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
         size: "",
         price_per_day: "",
         description: "",
-        image_url: ""
+        image_url: "",
+        phone: "",
+        email: ""
       });
       onBillboardAdded();
       setOpen(false);
@@ -184,14 +189,19 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
             
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                name="location"
-                placeholder="Enter location"
-                value={formData.location}
-                onChange={handleInputChange}
-                required
-              />
+              <Select 
+                value={formData.location} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Accra">Accra</SelectItem>
+                  <SelectItem value="Takoradi">Takoradi</SelectItem>
+                  <SelectItem value="Kumasi">Kumasi</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -294,6 +304,34 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
               onChange={handleInputChange}
               rows={3}
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="Enter phone number"
+                value={formData.phone}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="Enter email address"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
