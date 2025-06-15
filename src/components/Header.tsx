@@ -19,8 +19,12 @@ const Header = () => {
           <a href="#how-it-works" className="text-foreground hover:text-primary transition-colors">
             How It Works
           </a>
-          <Button variant="ghost">Sign Up</Button>
-          <Button className="bg-secondary hover:bg-secondary/90">Log In</Button>
+          <Button variant="ghost" asChild>
+            <a href="/signup">Sign Up</a>
+          </Button>
+          <Button asChild>
+            <a href="/login">Log In</a>
+          </Button>
         </nav>
       </div>
     </header>
