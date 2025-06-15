@@ -136,8 +136,19 @@ const Dashboard = () => {
               <span className="font-bold text-xl">DilaAds</span>
               <span className="text-muted-foreground">Owner Dashboard</span>
             </div>
-            <Button onClick={handleSignOut} variant="outline">
-              Sign Out
+            <nav className="hidden md:flex items-center space-x-6">
+              <Button variant="ghost" onClick={() => navigate('/')}>
+                Home
+              </Button>
+              <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+                Dashboard
+              </Button>
+              <Button onClick={handleSignOut} variant="outline">
+                Logout
+              </Button>
+            </nav>
+            <Button onClick={handleSignOut} variant="outline" className="md:hidden">
+              Logout
             </Button>
           </div>
         </header>
@@ -216,8 +227,19 @@ const Dashboard = () => {
             <span className="font-bold text-xl">DilaAds</span>
             <span className="text-muted-foreground">Advertiser Dashboard</span>
           </div>
-          <Button onClick={handleSignOut} variant="outline">
-            Sign Out
+          <nav className="hidden md:flex items-center space-x-6">
+            <Button variant="ghost" onClick={() => navigate('/')}>
+              Home
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+              Dashboard
+            </Button>
+            <Button onClick={handleSignOut} variant="outline">
+              Logout
+            </Button>
+          </nav>
+          <Button onClick={handleSignOut} variant="outline" className="md:hidden">
+            Logout
           </Button>
         </div>
       </header>

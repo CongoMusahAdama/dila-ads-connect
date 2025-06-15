@@ -23,19 +23,19 @@ const FeaturedBillboards = () => {
   const handleViewDetails = (billboard) => {
     const detailedBillboard = {
       id: billboard.id.toString(),
-      title: `Premium Billboard - ${billboard.location}`,
+      title: billboard.name,
       location: billboard.location,
-      price: parseInt(billboard.price.replace(/[^\d]/g, '')),
-      size: billboard.details,
-      description: "Premium billboard location with high visibility and excellent traffic flow. Perfect for brand awareness campaigns and reaching your target audience. This location offers maximum exposure with thousands of daily impressions from both vehicular and pedestrian traffic.",
-      availability: "Available",
+      price: parseFloat(billboard.price_per_day),
+      size: billboard.size,
+      description: billboard.description || "Premium billboard location with high visibility and excellent traffic flow. Perfect for brand awareness campaigns and reaching your target audience. This location offers maximum exposure with thousands of daily impressions from both vehicular and pedestrian traffic.",
+      availability: billboard.is_available ? "Available" : "Not Available",
       views: Math.floor(Math.random() * 5000) + 1000,
       contact: {
         name: "Billboard Owner",
         phone: "+233 50 123 4567",
         email: "owner@example.com"
       },
-      images: [billboard.image],
+      images: [billboard.image_url || "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"],
       features: ["Premium Location", "High Traffic", "LED Lighting", "24/7 Visibility"]
     };
     setSelectedBillboard(detailedBillboard);
