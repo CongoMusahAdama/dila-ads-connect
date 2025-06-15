@@ -9,6 +9,8 @@ interface Profile {
   first_name: string | null;
   last_name: string | null;
   role: 'advertiser' | 'owner';
+  avatar_url: string | null;
+  bio: string | null;
   created_at: string;
   updated_at: string;
 }
