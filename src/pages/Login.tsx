@@ -1,20 +1,24 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail, Phone } from "lucide-react";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
+    phone: "",
     password: ""
   });
+  const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, user, profile, loading } = useAuth();
+  const { signIn, signInWithPhone, user, profile, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,6 +39,7 @@ const Login = () => {
     const password = searchParams.get('password');
     if (email) {
       setFormData(prev => ({ ...prev, email, password: password || '' }));
+      setAuthMethod('email');
     }
   }, [user, profile, loading, navigate, location]);
 
@@ -48,12 +53,17 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const { error } = await signIn(formData.email, formData.password);
+    let result;
+    if (authMethod === "email") {
+      result = await signIn(formData.email, formData.password);
+    } else {
+      result = await signInWithPhone(formData.phone, formData.password);
+    }
     
-    if (error) {
+    if (result.error) {
       toast({
         title: "Login Failed",
-        description: error.message,
+        description: result.error.message,
         variant: "destructive",
       });
     } else {
@@ -87,19 +97,47 @@ const Login = () => {
             <CardDescription>Sign in to your DilaAds account</CardDescription>
           </CardHeader>
           <CardContent>
+            <Tabs value={authMethod} onValueChange={(value) => setAuthMethod(value as "email" | "phone")} className="mb-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="email" className="flex items-center gap-2">
+                  <Mail size={16} />
+                  Email
+                </TabsTrigger>
+                <TabsTrigger value="phone" className="flex items-center gap-2">
+                  <Phone size={16} />
+                  Phone
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
             <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
+            {authMethod === "email" ? (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="+1234567890"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
