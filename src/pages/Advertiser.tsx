@@ -19,7 +19,9 @@ const Advertiser = () => {
     }
   }, [user, profile, loading, navigate]);
 
+  // Show loading state
   if (loading) {
+    console.log('Showing loading state');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">Loading...</div>
@@ -27,9 +29,17 @@ const Advertiser = () => {
     );
   }
 
+  // Show nothing while redirecting
   if (!user || profile?.role !== 'advertiser') {
-    return null;
+    console.log('No user or wrong role, returning null');
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">Checking permissions...</div>
+      </div>
+    );
   }
+
+  console.log('Rendering dashboard');
 
   return (
     <div className="min-h-screen bg-background">

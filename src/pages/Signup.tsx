@@ -74,23 +74,29 @@ const Signup = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 relative"
-      style={{
-        backgroundImage: 'url(/lovable-uploads/4354e036-e3a7-4521-90d7-f1fadbfb4ffd.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
-      <div className="absolute inset-0 bg-black/40"></div>
-      <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-card/95 shadow-2xl border border-border/20">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
-          <CardDescription>Join DilaAds and start connecting</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen flex items-center justify-center lg:justify-start p-4 relative">
+      {/* Background Image - Hidden on mobile, visible on desktop */}
+      <div 
+        className="hidden lg:block absolute inset-0 lg:left-1/2"
+        style={{
+          backgroundImage: 'url(/lovable-uploads/c6613390-5270-4cf0-bbeb-3b5c5c7195bf.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="absolute inset-0 bg-black/30"></div>
+      </div>
+      
+      {/* Form Container */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center relative z-10 lg:bg-background lg:min-h-screen">
+        <Card className="w-full max-w-md shadow-2xl border border-border/20">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
+            <CardDescription>Join DilaAds and start connecting</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
@@ -217,9 +223,10 @@ const Signup = () => {
                 Sign in
               </Link>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
