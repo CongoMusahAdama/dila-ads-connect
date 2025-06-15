@@ -1,8 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
 const FeaturedBillboards = () => {
+  const navigate = useNavigate();
+
+  const handleBooking = () => {
+    navigate('/login');
+  };
   const billboards = [
     {
       id: 1,
@@ -56,9 +63,52 @@ const FeaturedBillboards = () => {
               </CardContent>
               
               <CardFooter className="p-6 pt-0">
-                <Button variant="outline" className="w-full">
-                  View Details
-                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                      View Details
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-bold">{billboard.location}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6">
+                      <div className="aspect-video overflow-hidden rounded-lg">
+                        <img 
+                          src={billboard.image} 
+                          alt={`Billboard in ${billboard.location}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold text-muted-foreground">Specifications</h4>
+                          <p className="text-lg">{billboard.details}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-muted-foreground">Price</h4>
+                          <p className="text-2xl font-bold text-primary">{billboard.price}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-muted-foreground mb-2">Location Details</h4>
+                        <p className="text-muted-foreground">
+                          Premium billboard location with high visibility and excellent traffic flow. 
+                          Perfect for brand awareness campaigns and reaching your target audience.
+                        </p>
+                      </div>
+                      <div className="flex gap-3 pt-4">
+                        <Button onClick={handleBooking} className="flex-1">
+                          Book Now
+                        </Button>
+                        <Button variant="outline" className="flex-1">
+                          Contact Owner
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardFooter>
             </Card>
           ))}
