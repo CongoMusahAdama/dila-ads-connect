@@ -1,16 +1,21 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import BillboardSearch from "@/components/BillboardSearch";
 import BookingsList from "@/components/BookingsList";
+import ProfileSettings from "@/components/ProfileSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Settings } from "lucide-react";
 
 const Advertiser = () => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
 
   console.log('Advertiser page - User:', user?.id, 'Profile:', profile?.role, 'Loading:', loading);
 
@@ -48,21 +53,68 @@ const Advertiser = () => {
     );
   }
 
+  const getDisplayName = () => {
+    if (profile.first_name && profile.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    } else if (profile.first_name) {
+      return profile.first_name;
+    } else if (profile.last_name) {
+      return profile.last_name;
+    }
+    return 'Advertiser';
+  };
+
+  const getInitials = () => {
+    const firstName = profile.first_name || '';
+    const lastName = profile.last_name || '';
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    }
+    return 'AD';
+  };
+
   console.log('Rendering dashboard');
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-6 max-w-7xl">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome back, {profile?.first_name || 'Advertiser'}!
-          </h1>
-          <p className="text-muted-foreground">
-            Manage your billboard bookings and discover new advertising opportunities.
-          </p>
+        {/* Welcome Section with Profile */}
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Avatar className="w-16 h-16">
+              <AvatarImage src={profile.avatar_url || ''} />
+              <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Welcome back, {getDisplayName()}!
+              </h1>
+              <p className="text-muted-foreground">
+                Manage your billboard bookings and discover new advertising opportunities.
+              </p>
+              {profile.bio && (
+                <p className="text-sm text-muted-foreground mt-1 italic">
+                  "{profile.bio}"
+                </p>
+              )}
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowProfileSettings(!showProfileSettings)}
+            className="flex items-center gap-2"
+          >
+            <Settings size={16} />
+            Profile Settings
+          </Button>
         </div>
+
+        {showProfileSettings && (
+          <div className="mb-8">
+            <ProfileSettings />
+          </div>
+        )}
 
         {/* Dashboard Grid */}
         <div className="grid gap-8 lg:grid-cols-3">

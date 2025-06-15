@@ -1,6 +1,8 @@
+
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,18 +10,13 @@ import AddBillboardModal from "@/components/AddBillboardModal";
 import BookingRequestsModal from "@/components/BookingRequestsModal";
 import ManageBillboardsModal from "@/components/ManageBillboardsModal";
 import MyBookingsModal from "@/components/MyBookingsModal";
+import ProfileSettings from "@/components/ProfileSettings";
+import { Settings } from "lucide-react";
 
 const Dashboard = () => {
   const { user, profile, signOut, loading } = useAuth();
   const navigate = useNavigate();
-  const [billboards, setBillboards] = useState([]);
-  const [stats, setStats] = useState({
-    activeBillboards: 0,
-    pendingRequests: 0,
-    occupancyRate: 0
-  });
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showRequestsModal, setShowRequestsModal] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [dashboardStats, setDashboardStats] = useState({
     activeListings: 0,
     pendingRequests: 0,
@@ -31,39 +28,6 @@ const Dashboard = () => {
       navigate('/login');
     }
   }, [user, loading, navigate]);
-
-  const fetchOwnerStats = async () => {
-    if (!user) return;
-
-    // Fetch billboards
-    const { data: billboardsData } = await supabase
-      .from('billboards')
-      .select('*')
-      .eq('owner_id', user.id);
-
-    // Fetch pending requests
-    const { data: requestsData } = await supabase
-      .from('booking_requests')
-      .select(`
-        *,
-        billboards!inner (owner_id)
-      `)
-      .eq('billboards.owner_id', user.id)
-      .eq('status', 'pending');
-
-    setBillboards(billboardsData || []);
-    setStats({
-      activeBillboards: billboardsData?.length || 0,
-      pendingRequests: requestsData?.length || 0,
-      occupancyRate: 0 // Calculate based on bookings
-    });
-  };
-
-  useEffect(() => {
-    if (user && profile?.role === 'owner') {
-      fetchOwnerStats();
-    }
-  }, [user, profile]);
 
   const fetchDashboardStats = async () => {
     if (!user || profile?.role !== 'owner') return;
@@ -103,12 +67,6 @@ const Dashboard = () => {
     fetchDashboardStats();
   };
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login');
-    }
-  }, [user, loading, navigate]);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -126,6 +84,26 @@ const Dashboard = () => {
       await signOut();
       navigate('/');
     }
+  };
+
+  const getDisplayName = () => {
+    if (profile.first_name && profile.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    } else if (profile.first_name) {
+      return profile.first_name;
+    } else if (profile.last_name) {
+      return profile.last_name;
+    }
+    return profile.role === 'owner' ? 'Billboard Owner' : 'Advertiser';
+  };
+
+  const getInitials = () => {
+    const firstName = profile.first_name || '';
+    const lastName = profile.last_name || '';
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    }
+    return profile.role === 'owner' ? 'BO' : 'AD';
   };
 
   if (profile.role === 'owner') {
@@ -147,6 +125,14 @@ const Dashboard = () => {
               <Button variant="ghost" onClick={() => navigate('/dashboard')}>
                 Dashboard
               </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowProfileSettings(!showProfileSettings)}
+                className="flex items-center gap-2"
+              >
+                <Settings size={16} />
+                Profile
+              </Button>
               <Button onClick={handleSignOut} variant="outline">
                 Logout
               </Button>
@@ -158,14 +144,34 @@ const Dashboard = () => {
         </header>
 
         <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">
-              Welcome back, {profile.first_name}!
-            </h1>
-            <p className="text-muted-foreground">
-              Manage your billboard listings and bookings
-            </p>
+          {/* Welcome Section with Profile */}
+          <div className="mb-8 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Avatar className="w-16 h-16">
+                <AvatarImage src={profile.avatar_url || ''} />
+                <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
+              </Avatar>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">
+                  Welcome back, {getDisplayName()}!
+                </h1>
+                <p className="text-muted-foreground">
+                  Manage your billboard listings and bookings
+                </p>
+                {profile.bio && (
+                  <p className="text-sm text-muted-foreground mt-1 italic">
+                    "{profile.bio}"
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
+
+          {showProfileSettings && (
+            <div className="mb-8">
+              <ProfileSettings />
+            </div>
+          )}
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <Card>
@@ -226,7 +232,6 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
-
       </div>
     );
   }
@@ -250,6 +255,14 @@ const Dashboard = () => {
             <Button variant="ghost" onClick={() => navigate('/dashboard')}>
               Dashboard
             </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => setShowProfileSettings(!showProfileSettings)}
+              className="flex items-center gap-2"
+            >
+              <Settings size={16} />
+              Profile
+            </Button>
             <Button onClick={handleSignOut} variant="outline">
               Logout
             </Button>
@@ -261,14 +274,34 @@ const Dashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">
-            Welcome back, {profile.first_name}!
-          </h1>
-          <p className="text-muted-foreground">
-            Find and book billboard spaces for your campaigns
-          </p>
+        {/* Welcome Section with Profile */}
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Avatar className="w-16 h-16">
+              <AvatarImage src={profile.avatar_url || ''} />
+              <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Welcome back, {getDisplayName()}!
+              </h1>
+              <p className="text-muted-foreground">
+                Find and book billboard spaces for your campaigns
+              </p>
+              {profile.bio && (
+                <p className="text-sm text-muted-foreground mt-1 italic">
+                  "{profile.bio}"
+                </p>
+              )}
+            </div>
+          </div>
         </div>
+
+        {showProfileSettings && (
+          <div className="mb-8">
+            <ProfileSettings />
+          </div>
+        )}
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
