@@ -6,7 +6,7 @@ import ThemeToggle from "./ThemeToggle";
 import { Home } from "lucide-react";
 
 const Header = () => {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -14,6 +14,17 @@ const Header = () => {
       await signOut();
       navigate('/');
     }
+  };
+
+  const getDisplayName = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    } else if (profile?.first_name) {
+      return profile.first_name;
+    } else if (profile?.last_name) {
+      return profile.last_name;
+    }
+    return user?.email || 'User';
   };
 
   return (
@@ -42,9 +53,14 @@ const Header = () => {
           )}
           <ThemeToggle />
           {user ? (
-            <Button onClick={handleSignOut} variant="outline" className="text-sm">
-              Logout
-            </Button>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-muted-foreground">
+                Welcome, {getDisplayName()}
+              </span>
+              <Button onClick={handleSignOut} variant="outline" className="text-sm">
+                Logout
+              </Button>
+            </div>
           ) : (
             <div className="flex space-x-2">
               <Button onClick={() => navigate('/login')} variant="outline" className="text-sm">
@@ -67,6 +83,16 @@ const Header = () => {
             <Home size={16} />
             <span className="text-xs">Home</span>
           </Button>
+          {user && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/dashboard')}
+              className="text-xs"
+            >
+              Dashboard
+            </Button>
+          )}
           <ThemeToggle />
           {user ? (
             <Button onClick={handleSignOut} variant="outline" size="sm" className="text-xs">

@@ -9,6 +9,24 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       billboards: {
         Row: {
           created_at: string
@@ -16,6 +34,7 @@ export type Database = {
           email: string | null
           id: string
           image_url: string | null
+          is_approved: boolean
           is_available: boolean
           location: string
           name: string
@@ -31,6 +50,7 @@ export type Database = {
           email?: string | null
           id?: string
           image_url?: string | null
+          is_approved?: boolean
           is_available?: boolean
           location: string
           name: string
@@ -46,6 +66,7 @@ export type Database = {
           email?: string | null
           id?: string
           image_url?: string | null
+          is_approved?: boolean
           is_available?: boolean
           location?: string
           name?: string
@@ -70,7 +91,10 @@ export type Database = {
           advertiser_id: string
           billboard_id: string
           created_at: string
+          dispute_reason: string | null
+          dispute_status: string | null
           end_date: string
+          has_dispute: boolean
           id: string
           message: string | null
           response_message: string | null
@@ -83,7 +107,10 @@ export type Database = {
           advertiser_id: string
           billboard_id: string
           created_at?: string
+          dispute_reason?: string | null
+          dispute_status?: string | null
           end_date: string
+          has_dispute?: boolean
           id?: string
           message?: string | null
           response_message?: string | null
@@ -96,7 +123,10 @@ export type Database = {
           advertiser_id?: string
           billboard_id?: string
           created_at?: string
+          dispute_reason?: string | null
+          dispute_status?: string | null
           end_date?: string
+          has_dispute?: boolean
           id?: string
           message?: string | null
           response_message?: string | null
@@ -121,6 +151,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      complaints: {
+        Row: {
+          admin_response: string | null
+          advertiser_id: string
+          created_at: string
+          description: string
+          id: string
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          advertiser_id: string
+          created_at?: string
+          description: string
+          id?: string
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          advertiser_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -163,7 +226,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
