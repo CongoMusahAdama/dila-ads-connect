@@ -1,9 +1,11 @@
+
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import BillboardSearch from "@/components/BillboardSearch";
 import BookingsList from "@/components/BookingsList";
+import ComplaintForm from "@/components/ComplaintForm";
 import ProfileSettings from "@/components/ProfileSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -158,9 +160,36 @@ const Advertiser = () => {
 
         <Separator className="my-6 sm:my-8" />
 
-        {/* Bookings Section */}
+        {/* My Bookings Section */}
         <div className="mt-6 sm:mt-8">
-          <BookingsList />
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl sm:text-2xl">My Bookings</CardTitle>
+              <CardDescription>
+                View and manage all your billboard booking requests.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BookingsList />
+            </CardContent>
+          </Card>
+        </div>
+
+        <Separator className="my-6 sm:my-8" />
+
+        {/* Complaint Submission Section */}
+        <div className="mt-6 sm:mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl sm:text-2xl">Submit a Complaint</CardTitle>
+              <CardDescription>
+                Report any issues or concerns to our admin team.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ComplaintForm />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
