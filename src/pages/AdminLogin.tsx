@@ -16,7 +16,8 @@ const AdminLogin = () => {
     password: ""
   });
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, user, loading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { user, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -38,13 +39,6 @@ const AdminLogin = () => {
     
     if (data) {
       navigate('/admin');
-    } else {
-      // User is logged in but not admin
-      toast({
-        title: "Access Denied",
-        description: "You don't have admin privileges.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -57,38 +51,56 @@ const AdminLogin = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    const result = await signIn(formData.email, formData.password);
-    
-    if (result.error) {
-      toast({
-        title: "Login Failed",
-        description: result.error.message,
-        variant: "destructive",
+    try {
+      // First try to sign in
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
       });
-    } else {
-      // Check if user is admin after successful login
-      setTimeout(async () => {
-        const { data } = await supabase
+
+      if (authError) {
+        toast({
+          title: "Login Failed",
+          description: authError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (authData.user) {
+        // Check if user is admin
+        const { data: adminData } = await supabase
           .from('admins')
           .select('*')
-          .eq('user_id', user?.id)
+          .eq('user_id', authData.user.id)
           .maybeSingle();
         
-        if (data) {
+        if (adminData) {
           toast({
             title: "Welcome Admin!",
             description: "You have been signed in successfully.",
           });
           navigate('/admin');
         } else {
+          // Sign out the non-admin user
+          await supabase.auth.signOut();
           toast({
             title: "Access Denied",
             description: "You don't have admin privileges.",
             variant: "destructive",
           });
         }
-      }, 1000);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -117,6 +129,7 @@ const AdminLogin = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 required
+                disabled={isLoading}
               />
             </div>
             
@@ -131,20 +144,22 @@ const AdminLogin = () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
+                  disabled={isLoading}
                   className="pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  disabled={isLoading}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
 
-            <Button type="submit" className="w-full">
-              Sign In as Admin
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Signing In..." : "Sign In as Admin"}
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
