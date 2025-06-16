@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,52 +139,120 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchPendingBillboards = async () => {
-    try {
-      const { data } = await supabase
-        .from('billboards')
-        .select(`
-          *,
-          profiles!inner(first_name, last_name)
-        `)
-        .eq('is_approved', false);
-
-      setPendingBillboards(data || []);
-    } catch (error) {
-      console.error('Error fetching pending billboards:', error);
-    }
-  };
-
   const fetchComplaints = async () => {
     try {
-      const { data } = await supabase
+      // First get complaints
+      const { data: complaintsData, error: complaintsError } = await supabase
         .from('complaints')
-        .select(`
-          *,
-          profiles!inner(first_name, last_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      setComplaints(data || []);
+      if (complaintsError) throw complaintsError;
+
+      if (!complaintsData) {
+        setComplaints([]);
+        return;
+      }
+
+      // Get profile data for each complaint
+      const complaintsWithProfiles = await Promise.all(
+        complaintsData.map(async (complaint) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('user_id', complaint.advertiser_id)
+            .single();
+
+          return {
+            ...complaint,
+            profiles: profileData || { first_name: 'Unknown', last_name: 'User' }
+          };
+        })
+      );
+
+      setComplaints(complaintsWithProfiles);
     } catch (error) {
       console.error('Error fetching complaints:', error);
+      setComplaints([]);
     }
   };
 
   const fetchDisputes = async () => {
     try {
-      const { data } = await supabase
+      // First get booking requests with disputes
+      const { data: disputesData, error: disputesError } = await supabase
         .from('booking_requests')
         .select(`
           *,
-          billboards!inner(name),
-          profiles!inner(first_name, last_name)
+          billboards(name)
         `)
         .eq('has_dispute', true);
 
-      setDisputes(data || []);
+      if (disputesError) throw disputesError;
+
+      if (!disputesData) {
+        setDisputes([]);
+        return;
+      }
+
+      // Get profile data for each dispute
+      const disputesWithProfiles = await Promise.all(
+        disputesData.map(async (dispute) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('user_id', dispute.advertiser_id)
+            .single();
+
+          return {
+            ...dispute,
+            profiles: profileData || { first_name: 'Unknown', last_name: 'User' }
+          };
+        })
+      );
+
+      setDisputes(disputesWithProfiles);
     } catch (error) {
       console.error('Error fetching disputes:', error);
+      setDisputes([]);
+    }
+  };
+
+  const fetchPendingBillboards = async () => {
+    try {
+      // First get pending billboards
+      const { data: billboardsData, error: billboardsError } = await supabase
+        .from('billboards')
+        .select('*')
+        .eq('is_approved', false);
+
+      if (billboardsError) throw billboardsError;
+
+      if (!billboardsData) {
+        setPendingBillboards([]);
+        return;
+      }
+
+      // Get profile data for each billboard
+      const billboardsWithProfiles = await Promise.all(
+        billboardsData.map(async (billboard) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('user_id', billboard.owner_id)
+            .single();
+
+          return {
+            ...billboard,
+            profiles: profileData || { first_name: 'Unknown', last_name: 'User' }
+          };
+        })
+      );
+
+      setPendingBillboards(billboardsWithProfiles);
+    } catch (error) {
+      console.error('Error fetching pending billboards:', error);
+      setPendingBillboards([]);
     }
   };
 
