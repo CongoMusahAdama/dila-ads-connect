@@ -11,7 +11,6 @@ import BookingRequestsModal from "@/components/BookingRequestsModal";
 import ManageBillboardsModal from "@/components/ManageBillboardsModal";
 import MyBookingsModal from "@/components/MyBookingsModal";
 import ProfileSettings from "@/components/ProfileSettings";
-import ComplaintForm from "@/components/ComplaintForm";
 import { Settings, Home } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -353,7 +352,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg sm:text-xl">Find Billboards</CardTitle>
@@ -379,11 +378,6 @@ const Dashboard = () => {
               <MyBookingsModal />
             </CardContent>
           </Card>
-        </div>
-
-        {/* Complaint Form for Advertisers */}
-        <div className="mb-6">
-          <ComplaintForm />
         </div>
       </div>
     </div>

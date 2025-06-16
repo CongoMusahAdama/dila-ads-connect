@@ -1,32 +1,35 @@
-
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import BillboardSearch from "@/components/BillboardSearch";
-import ComplaintForm from "@/components/ComplaintForm";
+import BookingsList from "@/components/BookingsList";
 import ProfileSettings from "@/components/ProfileSettings";
-import EnhancedBookingsList from "@/components/EnhancedBookingsList";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Settings, Calendar, FileText } from "lucide-react";
+import { Settings } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const Advertiser = () => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState<'search' | 'bookings' | 'complaints'>('search');
+
+  console.log('Advertiser page - User:', user?.id, 'Profile:', profile?.role, 'Loading:', loading);
 
   useEffect(() => {
+    console.log('Advertiser useEffect - User:', user?.id, 'Profile:', profile, 'Loading:', loading);
     if (!loading && (!user || profile?.role !== 'advertiser')) {
+      console.log('Redirecting to login - no user or wrong role');
       navigate('/login');
     }
   }, [user, profile, loading, navigate]);
 
   // Show loading state
   if (loading) {
+    console.log('Showing loading state');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -39,6 +42,7 @@ const Advertiser = () => {
 
   // Show nothing while redirecting
   if (!user || profile?.role !== 'advertiser') {
+    console.log('No user or wrong role, returning null');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -68,6 +72,8 @@ const Advertiser = () => {
     }
     return 'AD';
   };
+
+  console.log('Rendering dashboard');
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,40 +118,13 @@ const Advertiser = () => {
           </div>
         )}
 
-        {/* Navigation Tabs */}
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-2 sm:gap-4 p-1 bg-muted rounded-lg">
-            <Button
-              variant={activeTab === 'search' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('search')}
-              className="h-10 px-4 flex items-center gap-2"
-            >
-              <span>Find Billboards</span>
-            </Button>
-            <Button
-              variant={activeTab === 'bookings' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('bookings')}
-              className="h-10 px-4 flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold shadow-md"
-            >
-              <Calendar size={16} />
-              <span>My Bookings</span>
-            </Button>
-            <Button
-              variant={activeTab === 'complaints' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('complaints')}
-              className="h-10 px-4 flex items-center gap-2"
-            >
-              <FileText size={16} />
-              <span>Submit Complaint</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Content Based on Active Tab */}
-        <div className="space-y-6">
-          {activeTab === 'search' && (
+        {/* Dashboard Grid */}
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
+          {/* Main Content Area */}
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+            {/* Find Billboards Section */}
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   Find Billboards
                 </CardTitle>
@@ -153,39 +132,35 @@ const Advertiser = () => {
                   Search and filter available billboards for your advertising campaigns.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <BillboardSearch />
               </CardContent>
             </Card>
-          )}
+          </div>
 
-          {activeTab === 'bookings' && (
+          {/* Sidebar */}
+          <div className="space-y-4 sm:space-y-6">
+            {/* Quick Stats */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-xl sm:text-2xl">My Bookings</CardTitle>
-                <CardDescription>
-                  View and manage all your billboard booking requests.
-                </CardDescription>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base sm:text-lg">Quick Overview</CardTitle>
               </CardHeader>
-              <CardContent>
-                <EnhancedBookingsList />
+              <CardContent className="pt-0">
+                <div className="text-center">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2">
+                    Your booking status and activity will appear here
+                  </p>
+                </div>
               </CardContent>
             </Card>
-          )}
+          </div>
+        </div>
 
-          {activeTab === 'complaints' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl sm:text-2xl">Submit a Complaint</CardTitle>
-                <CardDescription>
-                  Report any issues or concerns to our admin team.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ComplaintForm />
-              </CardContent>
-            </Card>
-          )}
+        <Separator className="my-6 sm:my-8" />
+
+        {/* Bookings Section */}
+        <div className="mt-6 sm:mt-8">
+          <BookingsList />
         </div>
       </div>
     </div>
