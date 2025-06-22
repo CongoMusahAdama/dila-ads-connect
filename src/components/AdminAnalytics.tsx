@@ -98,7 +98,7 @@ const AdminAnalytics = () => {
       // Calculate revenue from accepted bookings
       const totalRevenue = bookings
         ?.filter(b => b.status === 'accepted')
-        .reduce((sum, booking) => sum + (parseFloat(booking.total_amount) || 0), 0) || 0;
+        .reduce((sum, booking) => sum + (Number(booking.total_amount) || 0), 0) || 0;
 
       // Calculate average booking duration
       const acceptedBookings = bookings?.filter(b => b.status === 'accepted') || [];
