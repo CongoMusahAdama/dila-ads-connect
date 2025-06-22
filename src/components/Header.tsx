@@ -40,6 +40,9 @@ const Header = () => {
               Dashboard
             </Button>
           )}
+          <Button variant="ghost" onClick={() => navigate('/admin-login')} className="text-sm">
+            Admin
+          </Button>
           <ThemeToggle />
           {user ? (
             <Button onClick={handleSignOut} variant="outline" className="text-sm">
