@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +14,20 @@ const FeaturedBillboards = () => {
   const [selectedBillboard, setSelectedBillboard] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [billboards, setBillboards] = useState([]);
+  const [bookedBillboards, setBookedBillboards] = useState(new Set());
   const [loading, setLoading] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const { toast } = useToast();
 
   const handleBooking = () => {
     navigate('/login');
   };
+
+  useEffect(() => {
+    // Add scroll animation trigger
+    const timer = setTimeout(() => setIsVisible(true), 200);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleViewDetails = (billboard) => {
     const detailedBillboard = {
@@ -28,7 +37,7 @@ const FeaturedBillboards = () => {
       price: parseFloat(billboard.price_per_day),
       size: billboard.size,
       description: billboard.description || "Premium billboard location with high visibility and excellent traffic flow. Perfect for brand awareness campaigns and reaching your target audience. This location offers maximum exposure with thousands of daily impressions from both vehicular and pedestrian traffic.",
-      availability: billboard.is_available ? "Available" : "Not Available",
+      availability: bookedBillboards.has(billboard.id) ? "Sold Out" : "Available",
       views: Math.floor(Math.random() * 5000) + 1000,
       contact: {
         name: "Billboard Owner",
@@ -49,14 +58,28 @@ const FeaturedBillboards = () => {
 
   const fetchBillboards = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch all approved billboards
+      const { data: billboardsData, error: billboardsError } = await supabase
         .from('billboards')
         .select('*')
-        .eq('is_available', true)
+        .eq('is_approved', true)
         .limit(6);
 
-      if (error) throw error;
-      setBillboards(data || []);
+      if (billboardsError) throw billboardsError;
+
+      // Fetch accepted bookings to determine which billboards are booked
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('booking_requests')
+        .select('billboard_id')
+        .eq('status', 'accepted');
+
+      if (bookingsError) throw bookingsError;
+
+      // Create a set of booked billboard IDs
+      const bookedIds = new Set(bookingsData?.map(booking => booking.billboard_id) || []);
+      
+      setBillboards(billboardsData || []);
+      setBookedBillboards(bookedIds);
     } catch (error: any) {
       toast({
         title: "Error fetching billboards",
@@ -75,7 +98,11 @@ const FeaturedBillboards = () => {
   return (
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold mb-12 text-foreground">Featured Billboards</h2>
+        <h2 className={`text-3xl font-bold mb-12 text-foreground transform transition-all duration-1000 ease-out ${
+          isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+        }`}>
+          Featured Billboards
+        </h2>
         
         {loading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -92,39 +119,60 @@ const FeaturedBillboards = () => {
           </div>
         ) : billboards.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {billboards.map((billboard) => (
-              <Card key={billboard.id} className="overflow-hidden">
-                <CardHeader className="p-0 relative">
-                  <img 
-                    src={billboard.image_url || "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"} 
-                    alt={`Billboard: ${billboard.name}`}
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png";
-                    }}
-                  />
-                  <Badge className="absolute top-3 left-3 bg-secondary text-secondary-foreground">
-                    Available
-                  </Badge>
-                </CardHeader>
-                
-                <CardContent className="p-6">
-                  <h3 className="font-bold text-xl mb-2">{billboard.name}</h3>
-                  <p className="text-muted-foreground mb-2">{billboard.location} • {billboard.size}</p>
-                  <p className="text-primary font-semibold">GH₵ {billboard.price_per_day}/day</p>
-                </CardContent>
-                
-                <CardFooter className="p-6 pt-0">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => handleViewDetails(billboard)}
-                  >
-                    View Details
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            {billboards.map((billboard, index) => {
+              const isBooked = bookedBillboards.has(billboard.id);
+              
+              return (
+                <Card 
+                  key={billboard.id} 
+                  className={`overflow-hidden transform transition-all duration-700 ease-out hover:scale-105 hover:shadow-lg ${
+                    isVisible 
+                      ? 'translate-y-0 opacity-100' 
+                      : 'translate-y-8 opacity-0'
+                  }`}
+                  style={{
+                    transitionDelay: `${index * 150}ms`
+                  }}
+                >
+                  <CardHeader className="p-0 relative">
+                    <img 
+                      src={billboard.image_url || "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"} 
+                      alt={`Billboard: ${billboard.name}`}
+                      className="w-full h-48 object-cover transition-transform duration-300 hover:scale-110"
+                      onError={(e) => {
+                        e.currentTarget.src = "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png";
+                      }}
+                    />
+                    <Badge 
+                      className={`absolute top-3 left-3 ${
+                        isBooked 
+                          ? 'bg-red-500 text-white' 
+                          : 'bg-secondary text-secondary-foreground'
+                      }`}
+                    >
+                      {isBooked ? 'Sold Out' : 'Available'}
+                    </Badge>
+                  </CardHeader>
+                  
+                  <CardContent className="p-6">
+                    <h3 className="font-bold text-xl mb-2">{billboard.name}</h3>
+                    <p className="text-muted-foreground mb-2">{billboard.location} • {billboard.size}</p>
+                    <p className="text-primary font-semibold">GH₵ {billboard.price_per_day}/day</p>
+                  </CardContent>
+                  
+                  <CardFooter className="p-6 pt-0">
+                    <Button 
+                      variant="outline" 
+                      className="w-full transition-colors duration-200"
+                      onClick={() => handleViewDetails(billboard)}
+                      disabled={isBooked}
+                    >
+                      {isBooked ? 'View Details (Sold Out)' : 'View Details'}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-12">

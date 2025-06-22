@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, XCircle, MapPin, Phone, Mail } from 'lucide-react';
+import { CheckCircle, XCircle, MapPin, Phone, Mail, User } from 'lucide-react';
 
 interface Billboard {
   id: string;
@@ -19,10 +19,11 @@ interface Billboard {
   image_url: string;
   created_at: string;
   owner_id: string;
-  profiles: {
+  owner_profile: {
     first_name: string;
     last_name: string;
-  };
+    role: string;
+  } | null;
 }
 
 const AdminBillboardApprovals = () => {
@@ -36,20 +37,32 @@ const AdminBillboardApprovals = () => {
 
   const fetchPendingBillboards = async () => {
     try {
-      const { data, error } = await supabase
+      // First get pending billboards
+      const { data: billboardsData, error: billboardsError } = await supabase
         .from('billboards')
-        .select(`
-          *,
-          profiles:owner_id (
-            first_name,
-            last_name
-          )
-        `)
+        .select('*')
         .eq('is_approved', false)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setPendingBillboards(data || []);
+      if (billboardsError) throw billboardsError;
+
+      // Then get profile data for each billboard
+      const billboardsWithProfiles = await Promise.all(
+        (billboardsData || []).map(async (billboard) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('first_name, last_name, role')
+            .eq('user_id', billboard.owner_id)
+            .single();
+
+          return {
+            ...billboard,
+            owner_profile: profileData
+          };
+        })
+      );
+
+      setPendingBillboards(billboardsWithProfiles);
     } catch (error) {
       console.error('Error fetching pending billboards:', error);
       toast({
@@ -170,8 +183,13 @@ const AdminBillboardApprovals = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="h-4 w-4" />
+                          <span className="font-medium">Owner:</span>
+                          <span>{billboard.owner_profile?.first_name} {billboard.owner_profile?.last_name}</span>
+                        </div>
                         <div className="text-sm">
-                          <span className="font-medium">Owner:</span> {billboard.profiles?.first_name} {billboard.profiles?.last_name}
+                          <span className="font-medium">Role:</span> {billboard.owner_profile?.role || 'owner'}
                         </div>
                         {billboard.phone && (
                           <div className="flex items-center gap-2 text-sm">

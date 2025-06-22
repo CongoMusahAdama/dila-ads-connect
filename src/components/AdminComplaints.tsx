@@ -17,10 +17,11 @@ interface Complaint {
   admin_response: string;
   created_at: string;
   updated_at: string;
-  profiles: {
+  advertiser_profile: {
     first_name: string;
     last_name: string;
-  };
+    email?: string;
+  } | null;
 }
 
 const AdminComplaints = () => {
@@ -35,19 +36,31 @@ const AdminComplaints = () => {
 
   const fetchComplaints = async () => {
     try {
-      const { data, error } = await supabase
+      // First get complaints
+      const { data: complaintsData, error: complaintsError } = await supabase
         .from('complaints')
-        .select(`
-          *,
-          profiles:advertiser_id (
-            first_name,
-            last_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setComplaints(data || []);
+      if (complaintsError) throw complaintsError;
+
+      // Then get profile data for each complaint
+      const complaintsWithProfiles = await Promise.all(
+        (complaintsData || []).map(async (complaint) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('user_id', complaint.advertiser_id)
+            .single();
+
+          return {
+            ...complaint,
+            advertiser_profile: profileData
+          };
+        })
+      );
+
+      setComplaints(complaintsWithProfiles);
     } catch (error) {
       console.error('Error fetching complaints:', error);
       toast({
@@ -173,7 +186,7 @@ const AdminComplaints = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <User className="h-4 w-4" />
-                      {complaint.profiles?.first_name} {complaint.profiles?.last_name}
+                      {complaint.advertiser_profile?.first_name} {complaint.advertiser_profile?.last_name}
                     </div>
                   </div>
                 </div>
