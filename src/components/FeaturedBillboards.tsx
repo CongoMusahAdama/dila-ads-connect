@@ -37,7 +37,8 @@ const FeaturedBillboards = () => {
       price: parseFloat(billboard.price_per_day),
       size: billboard.size,
       description: billboard.description || "Premium billboard location with high visibility and excellent traffic flow. Perfect for brand awareness campaigns and reaching your target audience. This location offers maximum exposure with thousands of daily impressions from both vehicular and pedestrian traffic.",
-      availability: bookedBillboards.has(billboard.id) ? "Sold Out" : "Available",
+      availability: bookedBillboards.has(billboard.id) ? "Sold Out" : 
+                   !billboard.is_approved ? "Pending Approval" : "Available",
       views: Math.floor(Math.random() * 5000) + 1000,
       contact: {
         name: "Billboard Owner",
@@ -58,11 +59,11 @@ const FeaturedBillboards = () => {
 
   const fetchBillboards = async () => {
     try {
-      // Fetch all approved billboards
+      // Fetch ALL billboards (both approved and unapproved)
       const { data: billboardsData, error: billboardsError } = await supabase
         .from('billboards')
         .select('*')
-        .eq('is_approved', true)
+        .order('created_at', { ascending: false })
         .limit(6);
 
       if (billboardsError) throw billboardsError;
@@ -95,6 +96,18 @@ const FeaturedBillboards = () => {
     fetchBillboards();
   }, []);
 
+  const getBadgeInfo = (billboard) => {
+    const isBooked = bookedBillboards.has(billboard.id);
+    
+    if (isBooked) {
+      return { text: 'Sold Out', className: 'bg-red-500 text-white' };
+    } else if (!billboard.is_approved) {
+      return { text: 'Pending Approval', className: 'bg-yellow-500 text-white' };
+    } else {
+      return { text: 'Available', className: 'bg-secondary text-secondary-foreground' };
+    }
+  };
+
   return (
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
@@ -120,6 +133,7 @@ const FeaturedBillboards = () => {
         ) : billboards.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {billboards.map((billboard, index) => {
+              const badgeInfo = getBadgeInfo(billboard);
               const isBooked = bookedBillboards.has(billboard.id);
               
               return (
@@ -129,7 +143,7 @@ const FeaturedBillboards = () => {
                     isVisible 
                       ? 'translate-y-0 opacity-100' 
                       : 'translate-y-8 opacity-0'
-                  }`}
+                  } ${!billboard.is_approved ? 'border-yellow-200 bg-yellow-50/30' : ''}`}
                   style={{
                     transitionDelay: `${index * 150}ms`
                   }}
@@ -143,21 +157,25 @@ const FeaturedBillboards = () => {
                         e.currentTarget.src = "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png";
                       }}
                     />
-                    <Badge 
-                      className={`absolute top-3 left-3 ${
-                        isBooked 
-                          ? 'bg-red-500 text-white' 
-                          : 'bg-secondary text-secondary-foreground'
-                      }`}
-                    >
-                      {isBooked ? 'Sold Out' : 'Available'}
+                    <Badge className={`absolute top-3 left-3 ${badgeInfo.className}`}>
+                      {badgeInfo.text}
                     </Badge>
+                    {!billboard.is_approved && (
+                      <Badge className="absolute top-3 right-3 bg-orange-500 text-white text-xs">
+                        New
+                      </Badge>
+                    )}
                   </CardHeader>
                   
                   <CardContent className="p-6">
                     <h3 className="font-bold text-xl mb-2">{billboard.name}</h3>
                     <p className="text-muted-foreground mb-2">{billboard.location} • {billboard.size}</p>
                     <p className="text-primary font-semibold">GH₵ {billboard.price_per_day}/day</p>
+                    {!billboard.is_approved && (
+                      <p className="text-xs text-orange-600 mt-2 italic">
+                        * Awaiting admin approval
+                      </p>
+                    )}
                   </CardContent>
                   
                   <CardFooter className="p-6 pt-0">

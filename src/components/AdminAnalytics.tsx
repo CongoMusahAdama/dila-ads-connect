@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,7 +58,7 @@ const AdminAnalytics = () => {
 
   const fetchAnalytics = async () => {
     try {
-      // Fetch user counts
+      // Fetch user counts from profiles table
       const { data: advertisers } = await supabase
         .from('profiles')
         .select('id')

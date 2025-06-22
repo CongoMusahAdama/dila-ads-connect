@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { MessageSquare, Calendar, User } from 'lucide-react';
+import { MessageSquare, Calendar, User, Mail } from 'lucide-react';
 
 interface Complaint {
   id: string;
@@ -20,8 +20,9 @@ interface Complaint {
   advertiser_profile: {
     first_name: string;
     last_name: string;
-    email?: string;
+    user_id: string;
   } | null;
+  advertiser_email?: string;
 }
 
 const AdminComplaints = () => {
@@ -36,7 +37,7 @@ const AdminComplaints = () => {
 
   const fetchComplaints = async () => {
     try {
-      // First get complaints
+      // Get complaints with profile data
       const { data: complaintsData, error: complaintsError } = await supabase
         .from('complaints')
         .select('*')
@@ -44,18 +45,31 @@ const AdminComplaints = () => {
 
       if (complaintsError) throw complaintsError;
 
-      // Then get profile data for each complaint
+      // Get profile and auth data for each complaint
       const complaintsWithProfiles = await Promise.all(
         (complaintsData || []).map(async (complaint) => {
+          // Get profile data
           const { data: profileData } = await supabase
             .from('profiles')
-            .select('first_name, last_name')
+            .select('first_name, last_name, user_id')
             .eq('user_id', complaint.advertiser_id)
             .single();
 
+          // Get email from auth.users if available (this might not work due to RLS)
+          let advertiserEmail = '';
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && user.id === complaint.advertiser_id) {
+              advertiserEmail = user.email || '';
+            }
+          } catch (error) {
+            console.log('Could not fetch user email:', error);
+          }
+
           return {
             ...complaint,
-            advertiser_profile: profileData
+            advertiser_profile: profileData,
+            advertiser_email: advertiserEmail
           };
         })
       );
@@ -147,7 +161,7 @@ const AdminComplaints = () => {
         <CardHeader>
           <CardTitle>Advertiser Complaints</CardTitle>
           <p className="text-muted-foreground">
-            Review and respond to complaints from advertisers
+            Review and respond to complaints from advertisers ({complaints.length} total)
           </p>
         </CardHeader>
       </Card>
@@ -184,10 +198,16 @@ const AdminComplaints = () => {
                       <Calendar className="h-4 w-4" />
                       {new Date(complaint.created_at).toLocaleDateString()}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 mb-1">
                       <User className="h-4 w-4" />
-                      {complaint.advertiser_profile?.first_name} {complaint.advertiser_profile?.last_name}
+                      {complaint.advertiser_profile?.first_name || 'Unknown'} {complaint.advertiser_profile?.last_name || ''}
                     </div>
+                    {complaint.advertiser_email && (
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-4 w-4" />
+                        {complaint.advertiser_email}
+                      </div>
+                    )}
                   </div>
                 </div>
 

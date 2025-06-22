@@ -29,6 +29,7 @@ interface Billboard {
 const AdminBillboardApprovals = () => {
   const [pendingBillboards, setPendingBillboards] = useState<Billboard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -76,17 +77,32 @@ const AdminBillboardApprovals = () => {
   };
 
   const handleApproval = async (billboardId: string, approved: boolean) => {
+    if (processingIds.has(billboardId)) return;
+    
+    setProcessingIds(prev => new Set(prev).add(billboardId));
+    
     try {
+      const updateData = approved 
+        ? { 
+            is_approved: true,
+            admin_approved_at: new Date().toISOString()
+          }
+        : { 
+            is_approved: false,
+            admin_approved_at: null
+          };
+
       const { error } = await supabase
         .from('billboards')
-        .update({ 
-          is_approved: approved,
-          admin_approved_at: approved ? new Date().toISOString() : null
-        })
+        .update(updateData)
         .eq('id', billboardId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
+      // Remove from pending list
       setPendingBillboards(prev => 
         prev.filter(billboard => billboard.id !== billboardId)
       );
@@ -95,12 +111,18 @@ const AdminBillboardApprovals = () => {
         title: approved ? "Billboard Approved" : "Billboard Rejected",
         description: `Billboard has been ${approved ? 'approved' : 'rejected'} successfully.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating billboard:', error);
       toast({
         title: "Error",
-        description: "Failed to update billboard status.",
+        description: `Failed to ${approved ? 'approve' : 'reject'} billboard: ${error.message}`,
         variant: "destructive",
+      });
+    } finally {
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(billboardId);
+        return newSet;
       });
     }
   };
@@ -144,99 +166,108 @@ const AdminBillboardApprovals = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          {pendingBillboards.map((billboard) => (
-            <Card key={billboard.id}>
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row gap-6">
-                  {billboard.image_url && (
-                    <div className="lg:w-1/3">
-                      <img
-                        src={billboard.image_url}
-                        alt={billboard.name}
-                        className="w-full h-48 object-cover rounded-lg"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold mb-2">
-                          {billboard.name}
-                        </h3>
-                        <Badge variant="secondary" className="mb-2">
-                          Pending Approval
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4" />
-                          <span>{billboard.location}</span>
-                        </div>
-                        <div className="text-sm">
-                          <span className="font-medium">Size:</span> {billboard.size}
-                        </div>
-                        <div className="text-sm">
-                          <span className="font-medium">Price:</span> GHS {billboard.price_per_day}/day
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <User className="h-4 w-4" />
-                          <span className="font-medium">Owner:</span>
-                          <span>{billboard.owner_profile?.first_name} {billboard.owner_profile?.last_name}</span>
-                        </div>
-                        <div className="text-sm">
-                          <span className="font-medium">Role:</span> {billboard.owner_profile?.role || 'owner'}
-                        </div>
-                        {billboard.phone && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Phone className="h-4 w-4" />
-                            <span>{billboard.phone}</span>
-                          </div>
-                        )}
-                        {billboard.email && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Mail className="h-4 w-4" />
-                            <span>{billboard.email}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {billboard.description && (
-                      <div className="mb-4">
-                        <h4 className="font-medium mb-2">Description:</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {billboard.description}
-                        </p>
+          {pendingBillboards.map((billboard) => {
+            const isProcessing = processingIds.has(billboard.id);
+            
+            return (
+              <Card key={billboard.id}>
+                <CardContent className="p-6">
+                  <div className="flex flex-col lg:flex-row gap-6">
+                    {billboard.image_url && (
+                      <div className="lg:w-1/3">
+                        <img
+                          src={billboard.image_url}
+                          alt={billboard.name}
+                          className="w-full h-48 object-cover rounded-lg"
+                          onError={(e) => {
+                            e.currentTarget.src = "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png";
+                          }}
+                        />
                       </div>
                     )}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-xl font-semibold mb-2">
+                            {billboard.name}
+                          </h3>
+                          <Badge variant="secondary" className="mb-2">
+                            Pending Approval
+                          </Badge>
+                        </div>
+                      </div>
 
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => handleApproval(billboard.id, true)}
-                        className="flex items-center gap-2"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        Approve
-                      </Button>
-                      <Button
-                        onClick={() => handleApproval(billboard.id, false)}
-                        variant="destructive"
-                        className="flex items-center gap-2"
-                      >
-                        <XCircle className="h-4 w-4" />
-                        Reject
-                      </Button>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <MapPin className="h-4 w-4" />
+                            <span>{billboard.location}</span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-medium">Size:</span> {billboard.size}
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-medium">Price:</span> GHS {billboard.price_per_day}/day
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-4 w-4" />
+                            <span className="font-medium">Owner:</span>
+                            <span>{billboard.owner_profile?.first_name} {billboard.owner_profile?.last_name}</span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-medium">Role:</span> {billboard.owner_profile?.role || 'owner'}
+                          </div>
+                          {billboard.phone && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Phone className="h-4 w-4" />
+                              <span>{billboard.phone}</span>
+                            </div>
+                          )}
+                          {billboard.email && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Mail className="h-4 w-4" />
+                              <span>{billboard.email}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {billboard.description && (
+                        <div className="mb-4">
+                          <h4 className="font-medium mb-2">Description:</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {billboard.description}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={() => handleApproval(billboard.id, true)}
+                          disabled={isProcessing}
+                          className="flex items-center gap-2"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          {isProcessing ? 'Processing...' : 'Approve'}
+                        </Button>
+                        <Button
+                          onClick={() => handleApproval(billboard.id, false)}
+                          disabled={isProcessing}
+                          variant="destructive"
+                          className="flex items-center gap-2"
+                        >
+                          <XCircle className="h-4 w-4" />
+                          {isProcessing ? 'Processing...' : 'Reject'}
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
