@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -6,19 +5,17 @@ import Header from "@/components/Header";
 import BillboardSearch from "@/components/BillboardSearch";
 import BookingsList from "@/components/BookingsList";
 import ProfileSettings from "@/components/ProfileSettings";
-import ComplaintForm from "@/components/ComplaintForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Settings, MessageSquare } from "lucide-react";
+import { Settings } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const Advertiser = () => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
-  const [showComplaintForm, setShowComplaintForm] = useState(false);
 
   console.log('Advertiser page - User:', user?.id, 'Profile:', profile?.role, 'Loading:', loading);
 
@@ -103,35 +100,17 @@ const Advertiser = () => {
               )}
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowComplaintForm(!showComplaintForm)}
-              className="flex items-center gap-2 text-sm sm:text-base shrink-0"
-              size="sm"
-            >
-              <MessageSquare size={16} />
-              <span className="hidden sm:inline">Submit Complaint</span>
-              <span className="sm:hidden">Complaint</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowProfileSettings(!showProfileSettings)}
-              className="flex items-center gap-2 text-sm sm:text-base shrink-0"
-              size="sm"
-            >
-              <Settings size={16} />
-              <span className="hidden sm:inline">Profile Settings</span>
-              <span className="sm:hidden">Profile</span>
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowProfileSettings(!showProfileSettings)}
+            className="flex items-center gap-2 text-sm sm:text-base shrink-0"
+            size="sm"
+          >
+            <Settings size={16} />
+            <span className="hidden sm:inline">Profile Settings</span>
+            <span className="sm:hidden">Profile</span>
+          </Button>
         </div>
-
-        {showComplaintForm && (
-          <div className="mb-6 sm:mb-8">
-            <ComplaintForm onClose={() => setShowComplaintForm(false)} />
-          </div>
-        )}
 
         {showProfileSettings && (
           <div className="mb-6 sm:mb-8">
