@@ -103,17 +103,17 @@ const Signup = () => {
   return (
     <div className="min-h-screen flex items-center justify-center lg:justify-start p-4 relative">
       {/* Background Image - Hidden on mobile, visible on desktop */}
-      <div 
-        className="hidden lg:block absolute inset-0 lg:left-1/2"
-        style={{
-          backgroundImage: 'url(/lovable-uploads/c6613390-5270-4cf0-bbeb-3b5c5c7195bf.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }}
-      >
-        <div className="absolute inset-0 bg-black/30"></div>
-      </div>
+          <div 
+            className="hidden lg:block absolute inset-0 lg:left-1/2"
+            style={{
+              backgroundImage: 'url(/uploads/c6613390-5270-4cf0-bbeb-3b5c5c7195bf.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          >
+            <div className="absolute inset-0 bg-black/30"></div>
+          </div>
       
       {/* Form Container */}
       <div className="w-full lg:w-1/2 flex items-center justify-center relative z-10 lg:bg-background lg:min-h-screen">

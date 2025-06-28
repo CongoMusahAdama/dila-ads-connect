@@ -20,9 +20,7 @@ const Header = () => {
     <header className="border-b bg-background">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-secondary rounded-md flex items-center justify-center">
-            <span className="font-bold text-secondary-foreground text-sm">D</span>
-          </div>
+          <img src="/uploads/dilaLogo.png" alt="DilaAds Logo" className="w-8 h-8 rounded-md" />
           <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
             <span className="font-bold text-lg sm:text-xl">DilaAds</span>
             <span className="text-muted-foreground text-xs sm:text-sm">Find Your Perfect Billboard</span>

@@ -160,8 +160,8 @@ const HeroSection = () => {
             <div className="relative w-full max-w-2xl">
               <div className="relative overflow-hidden rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 ring-1 ring-border/50">
                 <img 
-                  src="/lovable-uploads/9e594151-058a-48ba-aa89-197d1b697959.png"
-                  alt="SafeDrive Billboard Example - Premium advertising space"
+                  src="/uploads/hero.png"
+                  alt="Hero section image"
                   className="w-full h-auto object-cover"
                   style={{ aspectRatio: '16/10' }}
                 />

@@ -80,7 +80,7 @@ const Login = () => {
       <div 
         className="hidden lg:block absolute inset-0 lg:left-1/2"
         style={{
-          backgroundImage: 'url(/lovable-uploads/c6613390-5270-4cf0-bbeb-3b5c5c7195bf.png)',
+          backgroundImage: 'url(uploads/c6613390-5270-4cf0-bbeb-3b5c5c7195bf.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
