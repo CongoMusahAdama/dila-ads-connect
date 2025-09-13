@@ -3,11 +3,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
-import { Home } from "lucide-react";
+import { Menu, X, Home, Search, User, Settings } from "lucide-react";
+import { useState } from "react";
 
 const Header = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     if (window.confirm("Are you sure you want to log out?")) {
@@ -16,16 +18,27 @@ const Header = () => {
     }
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <header className="border-b bg-background">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        {/* Logo */}
         <div className="flex items-center space-x-2">
           <img src="/uploads/dilaLogo.png" alt="DilaAds Logo" className="w-8 h-8 rounded-md" />
-          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-            <span className="font-bold text-lg sm:text-xl">DilaAds</span>
-            <span className="text-muted-foreground text-xs sm:text-sm">Find Your Perfect Billboard</span>
+          <div className="flex flex-col">
+            <span className="font-bold text-lg">DilaAds</span>
+            <span className="text-muted-foreground text-xs hidden sm:block">Find Your Perfect Billboard</span>
           </div>
         </div>
+
+        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
           <Button variant="ghost" onClick={() => navigate('/')} className="text-sm">
             Home
@@ -57,29 +70,111 @@ const Header = () => {
             </div>
           )}
         </nav>
+
+        {/* Mobile Menu Button */}
         <div className="md:hidden flex items-center space-x-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1 px-2"
-            title="Home"
-          >
-            <Home size={16} />
-            <span className="text-xs">Home</span>
-          </Button>
           <ThemeToggle />
-          {user ? (
-            <Button onClick={handleSignOut} variant="outline" size="sm" className="text-xs">
-              Logout
-            </Button>
-          ) : (
-            <Button onClick={() => navigate('/login')} variant="outline" size="sm" className="text-xs">
-              Login
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleMobileMenu}
+            className="p-2"
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </Button>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container mx-auto px-4 py-4 space-y-3">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                navigate('/');
+                closeMobileMenu();
+              }}
+              className="w-full justify-start text-left"
+            >
+              <Home size={18} className="mr-3" />
+              Home
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                navigate('/advertiser');
+                closeMobileMenu();
+              }}
+              className="w-full justify-start text-left"
+            >
+              <Search size={18} className="mr-3" />
+              Browse Billboards
+            </Button>
+            {user && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  navigate('/dashboard');
+                  closeMobileMenu();
+                }}
+                className="w-full justify-start text-left"
+              >
+                <User size={18} className="mr-3" />
+                Dashboard
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              onClick={() => {
+                navigate('/admin-login');
+                closeMobileMenu();
+              }}
+              className="w-full justify-start text-left"
+            >
+              <Settings size={18} className="mr-3" />
+              Admin
+            </Button>
+            <div className="pt-3 border-t">
+              {user ? (
+                <Button
+                  onClick={() => {
+                    handleSignOut();
+                    closeMobileMenu();
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Logout
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => {
+                      navigate('/login');
+                      closeMobileMenu();
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      navigate('/signup');
+                      closeMobileMenu();
+                    }}
+                    className="w-full"
+                  >
+                    Sign Up
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

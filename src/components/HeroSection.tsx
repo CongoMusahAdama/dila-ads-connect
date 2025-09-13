@@ -57,7 +57,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative py-16 lg:py-24 bg-gradient-to-b from-background via-background to-muted/20 min-h-[85vh] flex items-center">
+    <section className="relative py-8 lg:py-24 bg-gradient-to-b from-background via-background to-muted/20 min-h-[50vh] lg:min-h-[85vh] flex items-center">
       {/* Mobile Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat lg:hidden"

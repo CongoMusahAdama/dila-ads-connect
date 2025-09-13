@@ -14,6 +14,7 @@ const billboardRoutes = require('./routes/billboards');
 const bookingRoutes = require('./routes/bookings');
 const complaintRoutes = require('./routes/complaints');
 const adminRoutes = require('./routes/admin');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 
@@ -101,6 +102,25 @@ app.get('/uploads/:filename', (req, res) => {
   }
 });
 
+// Route for serving avatar images
+app.get('/uploads/avatars/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, '../uploads/avatars', filename);
+  
+  // Set CORS headers explicitly
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'false');
+  
+  // Check if file exists
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).json({ error: 'Avatar not found' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
@@ -116,6 +136,7 @@ app.use('/api/billboards', billboardRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

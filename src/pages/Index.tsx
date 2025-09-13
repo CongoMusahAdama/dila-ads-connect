@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import FeaturedBillboards from "@/components/FeaturedBillboards";
 import HowItWorks from "@/components/HowItWorks";
+import ScrollToTop from "@/components/ScrollToTop";
 
 const Index = () => {
   return (
@@ -10,6 +11,7 @@ const Index = () => {
       <HeroSection />
       <FeaturedBillboards />
       <HowItWorks />
+      <ScrollToTop />
     </div>
   );
 };
