@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,16 +13,19 @@ import {
   Clock,
   AlertTriangle,
   MessageSquare,
-  TrendingUp
+  TrendingUp,
+  RefreshCw
 } from 'lucide-react';
 import AdminAnalytics from '@/components/AdminAnalytics';
 import AdminBillboardApprovals from '@/components/AdminBillboardApprovals';
 import AdminDisputes from '@/components/AdminDisputes';
 import AdminComplaints from '@/components/AdminComplaints';
+import { apiClient } from '@/lib/api';
 
 const AdminDashboard = () => {
   const [adminData, setAdminData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -32,16 +34,42 @@ const AdminDashboard = () => {
   }, []);
 
   const checkAdminAuth = async () => {
-    const adminEmail = localStorage.getItem('adminEmail');
-    if (!adminEmail || adminEmail !== 'dilaAds@admin') {
+    try {
+      const adminEmail = localStorage.getItem('adminEmail');
+      const adminToken = localStorage.getItem('adminToken');
+      
+      if (!adminEmail || adminEmail !== 'dilads@gmail.com' || !adminToken) {
+        navigate('/admin-login');
+        return;
+      }
+
+      // Set the token in the API client
+      apiClient.setToken(adminToken);
+      
+      // Verify the token is valid by making a test request
+      try {
+        await apiClient.getDashboardStats();
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Admin token validation failed:', error);
+        // Clear invalid token
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminEmail');
+        navigate('/admin-login');
+        return;
+      }
+    } catch (error) {
+      console.error('Admin auth check failed:', error);
       navigate('/admin-login');
-      return;
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminToken');
+    apiClient.setToken(null);
     navigate('/');
     toast({
       title: "Logged out",
@@ -55,6 +83,10 @@ const AdminDashboard = () => {
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will redirect to login
   }
 
   return (

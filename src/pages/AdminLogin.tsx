@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
+import { apiClient } from '@/lib/api';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -21,26 +22,25 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      // Simple credential check for admin login
-      if (email === 'dilaAds@admin' && password === 'dilaAds_1234') {
-        localStorage.setItem('adminEmail', email);
-        navigate('/admin-dashboard');
-        toast({
-          title: "Login successful",
-          description: "Welcome to the admin dashboard!",
-        });
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid admin credentials.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+      // Use the real API authentication
+      const response = await apiClient.login(email, password);
+      
+      // Store the JWT token
+      apiClient.setToken(response.token);
+      
+      // Store admin info for dashboard check
+      localStorage.setItem('adminEmail', email);
+      
+      navigate('/admin-dashboard');
+      toast({
+        title: "Login successful",
+        description: "Welcome to the admin dashboard!",
+      });
+    } catch (error: any) {
       console.error('Login error:', error);
       toast({
         title: "Login failed",
-        description: "An error occurred during login.",
+        description: error.message || "Invalid admin credentials.",
         variant: "destructive",
       });
     } finally {
@@ -52,8 +52,12 @@ const AdminLogin = () => {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="font-bold text-primary-foreground text-2xl">D</span>
+          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
+            <img 
+              src="/uploads/dilaLogo.png" 
+              alt="DilaAds Logo" 
+              className="w-12 h-12 object-contain"
+            />
           </div>
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <p className="text-muted-foreground">

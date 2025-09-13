@@ -3,17 +3,17 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import BillboardDetailsModal from "./BillboardDetailsModal";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { useFeaturedBillboards } from "@/hooks/useBillboards";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getBillboardImageUrl } from "@/utils/imageUtils";
 
 const FeaturedBillboards = () => {
   const navigate = useNavigate();
   const [selectedBillboard, setSelectedBillboard] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [billboards, setBillboards] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { billboards, loading } = useFeaturedBillboards();
   const { toast } = useToast();
 
   const handleBooking = () => {
@@ -22,20 +22,20 @@ const FeaturedBillboards = () => {
 
   const handleViewDetails = (billboard) => {
     const detailedBillboard = {
-      id: billboard.id.toString(),
+      id: billboard._id.toString(),
       title: billboard.name,
       location: billboard.location,
-      price: parseFloat(billboard.price_per_day),
+      price: parseFloat(billboard.pricePerDay),
       size: billboard.size,
       description: billboard.description || "Premium billboard location with high visibility and excellent traffic flow. Perfect for brand awareness campaigns and reaching your target audience. This location offers maximum exposure with thousands of daily impressions from both vehicular and pedestrian traffic.",
-      availability: billboard.is_available ? "Available" : "Not Available",
+      availability: billboard.isAvailable ? "Available" : "Not Available",
       views: Math.floor(Math.random() * 5000) + 1000,
       contact: {
-        name: "Billboard Owner",
+        name: `${billboard.ownerId.profile.firstName} ${billboard.ownerId.profile.lastName}`,
         phone: billboard.phone || "+233 50 123 4567",
-        email: billboard.email || "owner@example.com"
+        email: billboard.email || billboard.ownerId.email
       },
-      images: [billboard.image_url || "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"],
+      images: [billboard.imageUrl || "/uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"],
       features: ["Premium Location", "High Traffic", "LED Lighting", "24/7 Visibility"]
     };
     setSelectedBillboard(detailedBillboard);
@@ -46,31 +46,6 @@ const FeaturedBillboards = () => {
     setIsModalOpen(false);
     setSelectedBillboard(null);
   };
-
-  const fetchBillboards = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('billboards')
-        .select('*')
-        .eq('is_available', true)
-        .limit(6);
-
-      if (error) throw error;
-      setBillboards(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching billboards",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBillboards();
-  }, []);
 
   return (
     <section className="py-16 bg-background">
@@ -93,14 +68,14 @@ const FeaturedBillboards = () => {
         ) : billboards.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {billboards.map((billboard) => (
-              <Card key={billboard.id} className="overflow-hidden">
+              <Card key={billboard._id} className="overflow-hidden">
                 <CardHeader className="p-0 relative">
                   <img 
-                    src={billboard.image_url || "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"} 
+                    src={getBillboardImageUrl(billboard)} 
                     alt={`Billboard: ${billboard.name}`}
                     className="w-full h-48 object-cover"
                     onError={(e) => {
-                      e.currentTarget.src = "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png";
+                      e.currentTarget.src = "/placeholder.svg";
                     }}
                   />
                   <Badge className="absolute top-3 left-3 bg-secondary text-secondary-foreground">
@@ -111,7 +86,7 @@ const FeaturedBillboards = () => {
                 <CardContent className="p-6">
                   <h3 className="font-bold text-xl mb-2">{billboard.name}</h3>
                   <p className="text-muted-foreground mb-2">{billboard.location} • {billboard.size}</p>
-                  <p className="text-primary font-semibold">GH₵ {billboard.price_per_day}/day</p>
+                  <p className="text-primary font-semibold">GH₵ {billboard.pricePerDay}/day</p>
                 </CardContent>
                 
                 <CardFooter className="p-6 pt-0">

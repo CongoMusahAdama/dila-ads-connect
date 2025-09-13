@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Mail, Phone } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -18,17 +18,22 @@ const Login = () => {
   });
   const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, signInWithPhone, user, profile, loading } = useAuth();
+  const { signIn, user, profile, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     if (!loading && user && profile) {
-      // Redirect based on user role
-      if (profile.role === 'advertiser') {
+      console.log('Login - User and profile loaded:', { user, profile });
+      console.log('Login - Profile role:', profile.role);
+      
+      // Redirect based on user role (backend returns uppercase)
+      if (profile.role === 'ADVERTISER') {
+        console.log('Login - Redirecting to advertiser dashboard');
         navigate('/advertiser');
-      } else if (profile.role === 'owner') {
+      } else if (profile.role === 'OWNER') {
+        console.log('Login - Redirecting to owner dashboard');
         navigate('/dashboard');
       }
     }
@@ -53,17 +58,16 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    let result;
-    if (authMethod === "email") {
-      result = await signIn(formData.email, formData.password);
-    } else {
-      result = await signInWithPhone(formData.phone, formData.password);
-    }
+    // Determine which field to use based on auth method
+    const email = authMethod === "email" ? formData.email : undefined;
+    const phone = authMethod === "phone" ? formData.phone : undefined;
+    
+    const result = await signIn(email || "", formData.password, phone);
     
     if (result.error) {
       toast({
         title: "Login Failed",
-        description: result.error.message,
+        description: result.error,
         variant: "destructive",
       });
     } else {
@@ -71,6 +75,7 @@ const Login = () => {
         title: "Welcome back!",
         description: "You have been signed in successfully.",
       });
+      // Navigation will be handled by the useEffect when user state updates
     }
   };
 

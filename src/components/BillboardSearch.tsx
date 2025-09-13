@@ -5,23 +5,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import BillboardDetailsModal from "./BillboardDetailsModal";
 import BookingModal from "./BookingModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { getBillboardImageUrl } from "@/utils/imageUtils";
+import { apiClient } from "@/lib/api";
 
 interface Billboard {
-  id: string;
+  _id: string;
   name: string;
   location: string;
   size: string;
-  price_per_day: number;
-  description: string;
-  image_url: string;
-  is_available: boolean;
-  phone: string;
-  email: string;
+  pricePerDay: number;
+  description?: string;
+  imageUrl?: string;
+  phone?: string;
+  email?: string;
+  isAvailable: boolean;
+  isApproved: boolean;
+  ownerId: {
+    _id: string;
+    email: string;
+    profile: {
+      firstName: string;
+      lastName: string;
+    };
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 const BillboardSearch = () => {
@@ -50,17 +62,15 @@ const BillboardSearch = () => {
 
   const fetchBillboards = async () => {
     try {
-      const { data, error } = await supabase
-        .from('billboards')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setBillboards(data || []);
+      console.log('Fetching billboards...');
+      const response = await apiClient.getBillboards({ limit: 100 });
+      console.log('Billboards response:', response);
+      setBillboards(response.billboards || []);
     } catch (error: any) {
+      console.error('Error fetching billboards:', error);
       toast({
         title: "Error fetching billboards",
-        description: error.message,
+        description: error.message || "Failed to fetch billboards",
         variant: "destructive",
       });
     } finally {
@@ -96,7 +106,7 @@ const BillboardSearch = () => {
     // Filter by price range
     if (priceFilter !== "all") {
       filtered = filtered.filter(billboard => {
-        const price = billboard.price_per_day;
+        const price = billboard.pricePerDay;
         switch (priceFilter) {
           case "low": return price <= 100;
           case "medium": return price > 100 && price <= 500;
@@ -108,9 +118,9 @@ const BillboardSearch = () => {
 
     // Filter by availability
     if (availabilityFilter === "available") {
-      filtered = filtered.filter(billboard => billboard.is_available);
+      filtered = filtered.filter(billboard => billboard.isAvailable);
     } else if (availabilityFilter === "unavailable") {
-      filtered = filtered.filter(billboard => !billboard.is_available);
+      filtered = filtered.filter(billboard => !billboard.isAvailable);
     }
 
     setFilteredBillboards(filtered);
@@ -118,20 +128,20 @@ const BillboardSearch = () => {
 
   const handleViewDetails = (billboard: Billboard) => {
     const detailedBillboard = {
-      id: billboard.id,
+      id: billboard._id,
       title: billboard.name,
       location: billboard.location,
-      price: billboard.price_per_day,
+      price: billboard.pricePerDay,
       size: billboard.size,
       description: billboard.description || "Premium billboard location with high visibility and excellent traffic flow.",
-      availability: billboard.is_available ? "Available" : "Not Available",
+      availability: billboard.isAvailable ? "Available" : "Not Available",
       views: Math.floor(Math.random() * 5000) + 1000,
       contact: {
-        name: "Billboard Owner",
+        name: `${billboard.ownerId?.profile?.firstName || 'Billboard'} ${billboard.ownerId?.profile?.lastName || 'Owner'}`,
         phone: billboard.phone || "+233 50 123 4567",
-        email: billboard.email || "owner@example.com"
+        email: billboard.email || billboard.ownerId?.email || "owner@example.com"
       },
-      images: [billboard.image_url || "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"],
+      images: [billboard.imageUrl],
       features: ["Premium Location", "High Traffic", "LED Lighting", "24/7 Visibility"]
     };
     setSelectedBillboard(detailedBillboard);
@@ -139,7 +149,7 @@ const BillboardSearch = () => {
   };
 
   const handleBookNow = (billboard: Billboard) => {
-    if (!user || profile?.role !== 'advertiser') {
+    if (!user || profile?.role !== 'ADVERTISER') {
       toast({
         title: "Access Denied",
         description: "Please login as an advertiser to book billboards.",
@@ -150,16 +160,16 @@ const BillboardSearch = () => {
     
     // Format billboard data to match what BookingModal expects
     const formattedBillboard = {
-      id: billboard.id,
+      id: billboard._id,
       name: billboard.name,
       location: billboard.location,
-      price_per_day: billboard.price_per_day,
-      price: billboard.price_per_day, // Fallback for compatibility
+      price_per_day: billboard.pricePerDay,
+      price: billboard.pricePerDay, // Fallback for compatibility
       description: billboard.description,
-      is_available: billboard.is_available,
+      is_available: billboard.isAvailable,
       phone: billboard.phone,
       email: billboard.email,
-      image_url: billboard.image_url,
+      image_url: billboard.imageUrl,
       size: billboard.size
     };
     
@@ -268,21 +278,21 @@ const BillboardSearch = () => {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBillboards.map((billboard) => (
-            <Card key={billboard.id} className="overflow-hidden">
+            <Card key={billboard._id} className="overflow-hidden">
               <div className="relative">
                 <img
-                  src={billboard.image_url || "/lovable-uploads/80d4b1df-e916-4ea8-9dec-746a81e6460c.png"}
+                  src={getBillboardImageUrl(billboard)}
                   alt={billboard.name}
                   className="w-full h-48 object-cover"
                 />
-                <Badge className={`absolute top-3 left-3 ${billboard.is_available ? 'bg-green-500' : 'bg-red-500'}`}>
-                  {billboard.is_available ? 'Available' : 'Unavailable'}
+                <Badge className={`absolute top-3 left-3 ${billboard.isAvailable ? 'bg-green-500' : 'bg-red-500'}`}>
+                  {billboard.isAvailable ? 'Available' : 'Unavailable'}
                 </Badge>
               </div>
               <CardContent className="p-6">
                 <h3 className="font-bold text-xl mb-2">{billboard.name}</h3>
                 <p className="text-muted-foreground mb-2">{billboard.location} • {billboard.size}</p>
-                <p className="text-primary font-semibold mb-4">GH₵ {billboard.price_per_day}/day</p>
+                <p className="text-primary font-semibold mb-4">GH₵ {billboard.pricePerDay}/day</p>
                 
                 <div className="flex gap-2">
                   <Button

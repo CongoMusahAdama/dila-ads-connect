@@ -160,8 +160,8 @@ const HeroSection = () => {
             <div className="relative w-full max-w-2xl">
               <div className="relative overflow-hidden rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 ring-1 ring-border/50">
                 <img 
-                  src="/uploads/hero.png"
-                  alt="Hero section image"
+                  src="/uploads/spicy-chicken-billboard.jpg"
+                  alt="Spicy Fried Chicken Billboard - Premium advertising space in Ghana"
                   className="w-full h-auto object-cover"
                   style={{ aspectRatio: '16/10' }}
                 />

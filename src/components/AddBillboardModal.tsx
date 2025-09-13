@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyBillboards } from "@/hooks/useBillboards";
 import { Upload } from "lucide-react";
 
 interface AddBillboardModalProps {
@@ -20,17 +20,28 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
     name: "",
     location: "",
     size: "",
-    price_per_day: "",
+    pricePerDay: "",
     description: "",
-    image_url: "",
+    imageUrl: "",
     phone: "",
-    email: ""
+    email: "",
+    selectedFile: undefined as File | undefined,
+    imagePreview: ""
   });
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { createBillboard } = useMyBillboards();
+
+  // Cleanup object URL on component unmount
+  useEffect(() => {
+    return () => {
+      if (formData.imagePreview) {
+        URL.revokeObjectURL(formData.imagePreview);
+      }
+    };
+  }, [formData.imagePreview]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
@@ -64,38 +75,20 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
       return;
     }
 
-    setUploading(true);
-    
-    try {
-      const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
-        .from('billboard-images')
-        .upload(fileName, file);
+    // Create a preview URL for the selected file
+    const previewUrl = URL.createObjectURL(file);
 
-      if (error) throw error;
+    // Store the file and preview URL for later upload with the form
+    setFormData(prev => ({
+      ...prev,
+      selectedFile: file,
+      imagePreview: previewUrl
+    }));
 
-      const { data: publicData } = supabase.storage
-        .from('billboard-images')
-        .getPublicUrl(fileName);
-
-      setFormData(prev => ({
-        ...prev,
-        image_url: publicData.publicUrl
-      }));
-
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully!",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload image",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
+    toast({
+      title: "File selected",
+      description: "Image file selected successfully!",
+    });
   };
 
   const validateImageUrl = (url: string) => {
@@ -113,7 +106,7 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
     if (!user) return;
 
     // Validate image URL if provided
-    if (formData.image_url && !validateImageUrl(formData.image_url)) {
+    if (formData.imageUrl && !validateImageUrl(formData.imageUrl)) {
       toast({
         title: "Invalid image URL",
         description: "Please enter a valid image URL ending with .jpg, .jpeg, .png, .webp, or .gif",
@@ -124,37 +117,55 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
 
     setLoading(true);
     
-    const { error } = await supabase
-      .from('billboards')
-      .insert({
-        ...formData,
-        price_per_day: parseFloat(formData.price_per_day),
-        owner_id: user.id
-      });
+    // Create FormData for file upload
+    const submitData = new FormData();
+    submitData.append('name', formData.name);
+    submitData.append('location', formData.location);
+    submitData.append('size', formData.size);
+    submitData.append('pricePerDay', formData.pricePerDay);
+    submitData.append('description', formData.description);
+    submitData.append('phone', formData.phone);
+    submitData.append('email', formData.email);
+    
+    // Add image file if selected, otherwise add imageUrl
+    if (formData.selectedFile) {
+      submitData.append('image', formData.selectedFile);
+    } else if (formData.imageUrl) {
+      submitData.append('imageUrl', formData.imageUrl);
+    }
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
+    const result = await createBillboard(submitData);
+
+    if (result.success) {
       toast({
         title: "Success",
-        description: "Billboard added successfully!",
+        description: "Billboard added successfully! It will appear on the home screen once approved by admin.",
       });
+      // Clean up the object URL if it exists
+      if (formData.imagePreview) {
+        URL.revokeObjectURL(formData.imagePreview);
+      }
+      
       setFormData({
         name: "",
         location: "",
         size: "",
-        price_per_day: "",
+        pricePerDay: "",
         description: "",
-        image_url: "",
+        imageUrl: "",
         phone: "",
-        email: ""
+        email: "",
+        selectedFile: undefined,
+        imagePreview: ""
       });
       onBillboardAdded();
       setOpen(false);
+    } else {
+      toast({
+        title: "Error",
+        description: result.error || "Failed to add billboard",
+        variant: "destructive",
+      });
     }
     
     setLoading(false);
@@ -219,14 +230,14 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="price_per_day">Price per Day (GHS)</Label>
+              <Label htmlFor="pricePerDay">Price per Day (GHS)</Label>
               <Input
-                id="price_per_day"
-                name="price_per_day"
+                id="pricePerDay"
+                name="pricePerDay"
                 type="number"
                 step="0.01"
                 placeholder="0.00"
-                value={formData.price_per_day}
+                value={formData.pricePerDay}
                 onChange={handleInputChange}
                 required
               />
@@ -242,37 +253,60 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
               </TabsList>
               
               <TabsContent value="upload" className="space-y-2">
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <div className="space-y-2">
-                    <Label htmlFor="file-upload" className="cursor-pointer">
-                      <span className="text-sm font-medium text-primary hover:text-primary/80">
-                        Choose image file
-                      </span>
-                      <Input
-                        id="file-upload"
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        disabled={uploading}
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center relative">
+                  {formData.imagePreview ? (
+                    <div className="space-y-2">
+                      <img 
+                        src={formData.imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-48 object-cover rounded border mx-auto"
                       />
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      JPEG, JPG, PNG, WebP up to 5MB
-                    </p>
-                    {uploading && (
-                      <p className="text-sm text-primary">Uploading...</p>
-                    )}
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="file-upload" className="cursor-pointer">
+                          <span className="text-sm font-medium text-primary hover:text-primary/80">
+                            Change image
+                          </span>
+                          <Input
+                            id="file-upload"
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          File: {formData.selectedFile?.name}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                      <Label htmlFor="file-upload" className="cursor-pointer">
+                        <span className="text-sm font-medium text-primary hover:text-primary/80">
+                          Choose image file
+                        </span>
+                        <Input
+                          id="file-upload"
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        JPEG, JPG, PNG, WebP up to 5MB
+                      </p>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
               
               <TabsContent value="url" className="space-y-2">
                 <Input
                   placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
                 />
                 <p className="text-xs text-muted-foreground">
                   Must be a valid URL ending with .jpg, .jpeg, .png, .webp, or .gif
@@ -280,10 +314,10 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
               </TabsContent>
             </Tabs>
             
-            {formData.image_url && (
+            {formData.imageUrl && (
               <div className="mt-2">
                 <img 
-                  src={formData.image_url} 
+                  src={formData.imageUrl} 
                   alt="Preview" 
                   className="w-full h-32 object-cover rounded border"
                   onError={(e) => {

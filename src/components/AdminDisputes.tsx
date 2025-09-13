@@ -1,246 +1,201 @@
-
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
+import { useAdminDisputes } from '@/hooks/useAdmin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { AlertTriangle, MessageSquare, Calendar } from 'lucide-react';
-
-interface Dispute {
-  id: string;
-  billboard_id: string;
-  advertiser_id: string;
-  start_date: string;
-  end_date: string;
-  total_amount: number;
-  dispute_reason: string;
-  dispute_status: string;
-  created_at: string;
-  billboards: {
-    name: string;
-    location: string;
-  };
-  profiles: {
-    first_name: string;
-    last_name: string;
-  };
-}
+import { AlertTriangle, MessageSquare, Calendar, User, MapPin } from 'lucide-react';
 
 const AdminDisputes = () => {
-  const [disputes, setDisputes] = useState<Dispute[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [resolutions, setResolutions] = useState<{[key: string]: string}>({});
+  const { disputes, loading, updateDispute } = useAdminDisputes();
+  const [statuses, setStatuses] = useState<{[key: string]: string}>({});
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchDisputes();
-  }, []);
-
-  const fetchDisputes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('booking_requests')
-        .select(`
-          *,
-          billboards:billboard_id (
-            name,
-            location
-          ),
-          profiles:advertiser_id (
-            first_name,
-            last_name
-          )
-        `)
-        .eq('has_dispute', true)
-        .eq('dispute_status', 'pending')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setDisputes(data || []);
-    } catch (error) {
-      console.error('Error fetching disputes:', error);
+  const handleStatusUpdate = async (disputeId: string) => {
+    const status = statuses[disputeId];
+    
+    if (!status) {
       toast({
         title: "Error",
-        description: "Failed to fetch disputes.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResolveDispute = async (disputeId: string, resolution: 'resolved' | 'escalated') => {
-    const resolutionNote = resolutions[disputeId];
-    
-    if (!resolutionNote) {
-      toast({
-        title: "Resolution Required",
-        description: "Please provide a resolution note.",
+        description: "Please select a status",
         variant: "destructive",
       });
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('booking_requests')
-        .update({ 
-          dispute_status: resolution,
-          response_message: resolutionNote
-        })
-        .eq('id', disputeId);
+    const result = await updateDispute(disputeId, {
+      disputeStatus: status as 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
+    });
 
-      if (error) throw error;
-
-      setDisputes(prev => prev.filter(dispute => dispute.id !== disputeId));
-      setResolutions(prev => {
-        const updated = { ...prev };
-        delete updated[disputeId];
-        return updated;
-      });
-
+    if (result.success) {
       toast({
-        title: "Dispute Resolved",
-        description: `Dispute has been marked as ${resolution}.`,
+        title: "Success",
+        description: "Dispute status updated successfully",
       });
-    } catch (error) {
-      console.error('Error resolving dispute:', error);
+      // Clear the status for this dispute
+      setStatuses(prev => ({ ...prev, [disputeId]: '' }));
+    } else {
       toast({
         title: "Error",
-        description: "Failed to resolve dispute.",
+        description: result.error || "Failed to update dispute",
         variant: "destructive",
       });
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'OPEN':
+        return 'bg-red-100 text-red-800';
+      case 'IN_PROGRESS':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'RESOLVED':
+        return 'bg-green-100 text-green-800';
+      case 'CLOSED':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (loading) {
     return (
-      <div className="space-y-4">
-        {[...Array(2)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="p-6">
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-              <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold">Dispute Management</h2>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
+                <div className="h-3 w-1/2 bg-gray-200 rounded"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-20 w-full bg-gray-200 rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (disputes.length === 0) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold">Dispute Management</h2>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertTriangle className="h-12 w-12 text-green-500 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Disputes</h3>
+            <p className="text-muted-foreground text-center">
+              There are no disputes to review at the moment.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Dispute Resolution</CardTitle>
-          <p className="text-muted-foreground">
-            Manage disputes between advertisers and billboard owners
-          </p>
-        </CardHeader>
-      </Card>
-
-      {disputes.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <AlertTriangle className="h-12 w-12 mx-auto text-green-500 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Active Disputes</h3>
-            <p className="text-muted-foreground">
-              All disputes have been resolved. Great job!
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {disputes.map((dispute) => (
-            <Card key={dispute.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">
-                      Dispute: {dispute.billboards?.name}
-                    </h3>
-                    <Badge variant="destructive" className="mb-2">
-                      Active Dispute
-                    </Badge>
-                  </div>
-                  <div className="text-right text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(dispute.created_at).toLocaleDateString()}
-                    </div>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Dispute Management</h2>
+        <Badge variant="outline">
+          {disputes.length} Total
+        </Badge>
+      </div>
+      
+      <div className="space-y-4">
+        {disputes.map((dispute) => (
+          <Card key={dispute._id}>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-lg">Booking Dispute</CardTitle>
+                  <div className="flex items-center text-sm text-muted-foreground mt-1">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span>{dispute.billboardId?.name} - {dispute.billboardId?.location}</span>
+                    <span className="mx-2">•</span>
+                    <Calendar className="h-4 w-4 mr-1" />
+                    <span>
+                      {new Date(dispute.startDate).toLocaleDateString()} - {new Date(dispute.endDate).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="space-y-2">
-                    <div className="text-sm">
-                      <span className="font-medium">Billboard:</span> {dispute.billboards?.name}
-                    </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Location:</span> {dispute.billboards?.location}
-                    </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Advertiser:</span> {dispute.profiles?.first_name} {dispute.profiles?.last_name}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-sm">
-                      <span className="font-medium">Booking Period:</span> {new Date(dispute.start_date).toLocaleDateString()} - {new Date(dispute.end_date).toLocaleDateString()}
-                    </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Amount:</span> GHS {dispute.total_amount}
-                    </div>
-                  </div>
+                <Badge className={getStatusColor(dispute.disputeStatus || 'OPEN')}>
+                  {dispute.disputeStatus?.replace('_', ' ') || 'OPEN'}
+                </Badge>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2 flex items-center">
+                    <User className="h-4 w-4 mr-2" />
+                    Billboard Owner:
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {dispute.billboardId?.ownerId?.profile?.firstName} {dispute.billboardId?.ownerId?.profile?.lastName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{dispute.billboardId?.ownerId?.email}</p>
                 </div>
 
-                {dispute.dispute_reason && (
-                  <div className="mb-4">
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      Dispute Reason:
-                    </h4>
-                    <p className="text-sm text-muted-foreground bg-muted p-3 rounded">
-                      {dispute.dispute_reason}
-                    </p>
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium">Resolution Note:</label>
-                    <Textarea
-                      placeholder="Provide details about how this dispute was resolved..."
-                      value={resolutions[dispute.id] || ''}
-                      onChange={(e) => setResolutions(prev => ({
-                        ...prev,
-                        [dispute.id]: e.target.value
-                      }))}
-                      className="mt-2"
-                    />
-                  </div>
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => handleResolveDispute(dispute.id, 'resolved')}
-                      className="flex items-center gap-2"
-                    >
-                      Mark as Resolved
-                    </Button>
-                    <Button
-                      onClick={() => handleResolveDispute(dispute.id, 'escalated')}
-                      variant="outline"
-                    >
-                      Escalate
-                    </Button>
-                  </div>
+                <div>
+                  <h4 className="font-medium mb-2 flex items-center">
+                    <User className="h-4 w-4 mr-2" />
+                    Advertiser:
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {dispute.advertiserId?.profile?.firstName} {dispute.advertiserId?.profile?.lastName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{dispute.advertiserId?.email}</p>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-medium">Dispute Details:</h4>
+                <p className="text-sm text-muted-foreground bg-gray-50 p-3 rounded">
+                  <strong>Reason:</strong> {dispute.disputeReason || 'No reason provided'}
+                </p>
+                <div className="flex justify-between items-center text-sm">
+                  <span><strong>Amount:</strong> GH₵ {dispute.totalAmount}</span>
+                  <span><strong>Created:</strong> {new Date(dispute.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium">Update Status:</label>
+                  <Select
+                    value={statuses[dispute._id] || dispute.disputeStatus || 'OPEN'}
+                    onValueChange={(value) => setStatuses(prev => ({ ...prev, [dispute._id]: value }))}
+                  >
+                    <SelectTrigger className="w-full mt-1">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="OPEN">Open</SelectItem>
+                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                      <SelectItem value="RESOLVED">Resolved</SelectItem>
+                      <SelectItem value="CLOSED">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button
+                  onClick={() => handleStatusUpdate(dispute._id)}
+                  className="w-full"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Update Dispute Status
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };

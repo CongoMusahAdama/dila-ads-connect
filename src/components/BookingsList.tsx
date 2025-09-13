@@ -4,86 +4,59 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Calendar, MapPin, DollarSign, Eye, ArrowLeft } from "lucide-react";
 import { usePaystackPayment } from 'react-paystack';
+import { useMyBookingRequests } from '@/hooks/useBookings';
+import { getBillboardImageUrl } from '@/utils/imageUtils';
+import { apiClient } from '@/lib/api';
 
 interface Booking {
-  id: string;
-  billboard_id: string;
-  start_date: string;
-  end_date: string;
-  total_amount: number;
-  status: string;
-  message: string | null;
-  response_message: string | null;
-  created_at: string;
-  billboards: {
+  _id: string;
+  billboardId: {
+    _id: string;
     name: string;
     location: string;
-    size: string;
-    image_url: string;
-  } | null;
+    imageUrl?: string;
+    size?: string;
+    pricePerDay?: number;
+    ownerId: {
+      _id: string;
+      email: string;
+      profile: {
+        firstName: string;
+        lastName: string;
+      };
+    };
+  };
+  startDate: string;
+  endDate: string;
+  totalAmount: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
+  message?: string;
+  responseMessage?: string;
+  createdAt: string;
 }
 
 const BookingsList = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-
-  const fetchMyBookings = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      console.log('Fetching bookings for user:', user.id);
-      const { data, error } = await supabase
-        .from('booking_requests')
-        .select(`
-          *,
-          billboards (name, location, size, image_url)
-        `)
-        .eq('advertiser_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching bookings:', error);
-        throw error;
-      }
-      
-      console.log('Fetched bookings:', data);
-      setBookings(data || []);
-    } catch (error: any) {
-      console.error('Error in fetchMyBookings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch your bookings",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchMyBookings();
-    }
-  }, [user]);
+  
+  const { bookingRequests: bookings, loading, refetch } = useMyBookingRequests();
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
+      case 'PENDING':
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
-      case 'approved':
+      case 'APPROVED':
         return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
-      case 'rejected':
+      case 'REJECTED':
         return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
-      case 'paid':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Paid</Badge>;
+      case 'COMPLETED':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Completed</Badge>;
+      case 'CANCELLED':
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Cancelled</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -105,7 +78,7 @@ const BookingsList = () => {
     const paystackConfig = {
       reference: new Date().getTime().toString(),
       email: user?.email || '',
-      amount: Math.round(booking.total_amount * 100),
+      amount: Math.round(booking.totalAmount * 100),
       publicKey: 'pk_live_a9e86ee55c4a014e1affce905ad59f11d9fe3bce',
       currency: 'GHS',
     };
@@ -114,20 +87,18 @@ const BookingsList = () => {
     
     const onPaymentSuccess = async (reference: any) => {
       try {
-        await supabase
-          .from('booking_requests')
-          .update({ 
-            status: 'paid',
-            response_message: `Payment completed successfully. Reference: ${reference.reference}`
-          })
-          .eq('id', booking.id);
+        // Update booking with payment confirmation
+        await apiClient.updateBookingStatus(booking._id, { 
+          status: 'APPROVED', // Keep as APPROVED but update response message
+          responseMessage: `Payment completed successfully. Reference: ${reference.reference}. Your booking is now confirmed.`
+        });
 
         toast({
           title: "Payment Successful!",
           description: `Your booking has been confirmed. Reference: ${reference.reference}`,
         });
         
-        fetchMyBookings();
+        refetch();
       } catch (error) {
         console.error('Error updating booking status:', error);
         toast({
@@ -170,32 +141,33 @@ const BookingsList = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">
-                {selectedBooking.billboards?.name || 'Billboard (Details Unavailable)'}
+                {selectedBooking.billboardId?.name || 'Billboard (Details Unavailable)'}
               </CardTitle>
               {getStatusBadge(selectedBooking.status)}
             </div>
             <CardDescription className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
-              {selectedBooking.billboards?.location || 'Location not available'} • {selectedBooking.billboards?.size || 'Size not available'}
+              {selectedBooking.billboardId?.location || 'Location not available'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                {selectedBooking.billboards?.image_url && (
-                  <img
-                    src={selectedBooking.billboards.image_url}
-                    alt={selectedBooking.billboards.name || 'Billboard'}
-                    className="w-full h-48 object-cover rounded border"
-                  />
-                )}
+                <img
+                  src={selectedBooking.billboardId.imageUrl ? getBillboardImageUrl({ imageUrl: selectedBooking.billboardId.imageUrl }) : "/placeholder.svg"}
+                  alt={selectedBooking.billboardId.name || 'Billboard'}
+                  className="w-full h-48 object-cover rounded border"
+                  onError={(e) => {
+                    e.currentTarget.src = "/placeholder.svg";
+                  }}
+                />
                 
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Duration:</span>
                   <span>
-                    {formatDate(selectedBooking.start_date)} - {formatDate(selectedBooking.end_date)}
-                    ({calculateDuration(selectedBooking.start_date, selectedBooking.end_date)} days)
+                    {formatDate(selectedBooking.startDate)} - {formatDate(selectedBooking.endDate)}
+                    ({calculateDuration(selectedBooking.startDate, selectedBooking.endDate)} days)
                   </span>
                 </div>
                 
@@ -203,7 +175,7 @@ const BookingsList = () => {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Total Amount:</span>
                   <span className="text-lg font-bold text-green-600">
-                    GHS {selectedBooking.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    GHS {selectedBooking.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
@@ -212,7 +184,7 @@ const BookingsList = () => {
                 <div>
                   <span className="font-medium">Booking Date:</span>
                   <span className="ml-2 text-sm text-muted-foreground">
-                    {formatDate(selectedBooking.created_at)}
+                    {formatDate(selectedBooking.createdAt)}
                   </span>
                 </div>
                 
@@ -225,24 +197,24 @@ const BookingsList = () => {
                   </div>
                 )}
                 
-                {selectedBooking.response_message && (
+                {selectedBooking.responseMessage && (
                   <div>
                     <span className="font-medium">Owner Response:</span>
                     <p className="text-sm text-muted-foreground mt-1 p-2 bg-muted rounded">
-                      {selectedBooking.response_message}
+                      {selectedBooking.responseMessage}
                     </p>
                   </div>
                 )}
               </div>
             </div>
 
-            {selectedBooking.status === 'approved' && (
+            {selectedBooking.status === 'APPROVED' && (
               <div className="pt-4 border-t">
                 <Button
                   onClick={() => handlePayment(selectedBooking)}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                 >
-                  Finalize & Pay - GHS {selectedBooking.total_amount.toLocaleString()}
+                  Finalize & Pay - GHS {selectedBooking.totalAmount.toLocaleString()}
                 </Button>
                 <p className="text-sm text-muted-foreground mt-2 text-center">
                   Your booking request has been approved. Complete payment to confirm your booking.
@@ -290,46 +262,47 @@ const BookingsList = () => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {bookings.map((booking) => (
-            <Card key={booking.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedBooking(booking)}>
+            <Card key={booking._id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedBooking(booking)}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-base line-clamp-2">
-                    {booking.billboards?.name || 'Billboard (Details Unavailable)'}
+                    {booking.billboardId?.name || 'Billboard (Details Unavailable)'}
                   </CardTitle>
                   {getStatusBadge(booking.status)}
                 </div>
                 <CardDescription className="flex items-center gap-1 text-xs">
                   <MapPin className="h-3 w-3" />
-                  {booking.billboards?.location || 'Location not available'}
+                  {booking.billboardId?.location || 'Location not available'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
-                {booking.billboards?.image_url && (
-                  <img
-                    src={booking.billboards.image_url}
-                    alt={booking.billboards.name || 'Billboard'}
-                    className="w-full h-24 object-cover rounded mb-3"
-                  />
-                )}
+                <img
+                  src={booking.billboardId.imageUrl ? getBillboardImageUrl({ imageUrl: booking.billboardId.imageUrl }) : "/placeholder.svg"}
+                  alt={booking.billboardId.name || 'Billboard'}
+                  className="w-full h-24 object-cover rounded mb-3"
+                  onError={(e) => {
+                    e.currentTarget.src = "/placeholder.svg";
+                  }}
+                />
                 
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Duration:</span>
                     <span className="font-medium">
-                      {calculateDuration(booking.start_date, booking.end_date)} days
+                      {calculateDuration(booking.startDate, booking.endDate)} days
                     </span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Amount:</span>
                     <span className="font-bold text-green-600">
-                      GHS {booking.total_amount.toLocaleString()}
+                      GHS {booking.totalAmount.toLocaleString()}
                     </span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Requested:</span>
-                    <span>{formatDate(booking.created_at)}</span>
+                    <span>{formatDate(booking.createdAt)}</span>
                   </div>
                 </div>
 

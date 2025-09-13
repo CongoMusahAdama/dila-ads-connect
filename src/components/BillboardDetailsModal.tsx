@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MapPin, Calendar, DollarSign, Eye, X, Phone, Mail } from "lucide-react";
 import BookingButton from "./BookingButton";
+import { getBillboardImageUrl } from "@/utils/imageUtils";
 
 interface BillboardDetailsModalProps {
   isOpen: boolean;
@@ -30,6 +31,10 @@ interface BillboardDetailsModalProps {
 const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsModalProps) => {
   if (!billboard) return null;
 
+  // Debug: Log the billboard data to see what we're working with
+  console.log('BillboardDetailsModal - billboard data:', billboard);
+  console.log('BillboardDetailsModal - images array:', billboard.images);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-[600px] h-[85vh] max-h-[90vh] p-0 overflow-hidden flex flex-col">
@@ -53,9 +58,12 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
             <div className="space-y-3">
               <div className="aspect-video bg-muted rounded-lg overflow-hidden">
                 <img 
-                  src={billboard.images?.[0] || "/lovable-uploads/9e594151-058a-48ba-aa89-197d1b697959.png"}
+                  src={billboard.images && billboard.images.length > 0 ? getBillboardImageUrl({ imageUrl: billboard.images[0] }) : "/placeholder.svg"}
                   alt={billboard.title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = "/placeholder.svg";
+                  }}
                 />
               </div>
               {billboard.images && billboard.images.length > 1 && (
@@ -63,7 +71,7 @@ const BillboardDetailsModal = ({ isOpen, onClose, billboard }: BillboardDetailsM
                   {billboard.images.slice(1, 4).map((image, index) => (
                     <div key={index} className="aspect-square bg-muted rounded-md overflow-hidden">
                       <img 
-                        src={image}
+                        src={getBillboardImageUrl({ imageUrl: image })}
                         alt={`${billboard.title} ${index + 2}`}
                         className="w-full h-full object-cover"
                       />

@@ -4,12 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Mail, Phone } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -21,19 +20,23 @@ const Signup = () => {
     confirmPassword: "",
     role: "advertiser"
   });
-  const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { signUp, signUpWithPhone, user, profile, loading } = useAuth();
+  const { signUp, user, profile, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && user && profile) {
-      // Redirect based on user role
-      if (profile.role === 'advertiser') {
+      console.log('User and profile loaded:', { user, profile });
+      console.log('Profile role:', profile.role);
+      
+      // Redirect based on user role (backend returns uppercase)
+      if (profile.role === 'ADVERTISER') {
+        console.log('Redirecting to advertiser dashboard');
         navigate('/advertiser');
-      } else if (profile.role === 'owner') {
+      } else if (profile.role === 'OWNER') {
+        console.log('Redirecting to owner dashboard');
         navigate('/dashboard');
       }
     }
@@ -58,45 +61,27 @@ const Signup = () => {
       return;
     }
 
-    let result;
-    if (authMethod === "email") {
-      result = await signUp(
-        formData.email,
-        formData.password,
-        formData.firstName,
-        formData.lastName,
-        formData.role
-      );
-    } else {
-      result = await signUpWithPhone(
-        formData.phone,
-        formData.password,
-        formData.firstName,
-        formData.lastName,
-        formData.role
-      );
-    }
+    const result = await signUp(
+      formData.email,
+      formData.password,
+      formData.firstName,
+      formData.lastName,
+      formData.role,
+      formData.phone
+    );
 
     if (result.error) {
       toast({
         title: "Signup Failed",
-        description: result.error.message,
+        description: result.error,
         variant: "destructive",
       });
     } else {
-      if (authMethod === "email") {
-        toast({
-          title: "Account Created!",
-          description: "Please check your email to verify your account.",
-        });
-        navigate(`/login?email=${encodeURIComponent(formData.email)}&password=${encodeURIComponent(formData.password)}`);
-      } else {
-        toast({
-          title: "Verification Code Sent!",
-          description: "Please check your phone for the verification code.",
-        });
-        navigate(`/verify-phone?phone=${encodeURIComponent(formData.phone)}`);
-      }
+      toast({
+        title: "Account Created!",
+        description: "Welcome to DilaAds! You can now start using the platform.",
+      });
+      // Navigation will be handled by the useEffect when user state updates
     }
   };
 
@@ -123,18 +108,6 @@ const Signup = () => {
             <CardDescription>Join DilaAds and start connecting</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={authMethod} onValueChange={(value) => setAuthMethod(value as "email" | "phone")} className="mb-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="email" className="flex items-center gap-2">
-                  <Mail size={16} />
-                  Email
-                </TabsTrigger>
-                <TabsTrigger value="phone" className="flex items-center gap-2">
-                  <Phone size={16} />
-                  Phone
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
 
             <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -162,33 +135,31 @@ const Signup = () => {
               </div>
             </div>
 
-            {authMethod === "email" ? (
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="+1234567890"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="john@example.com"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="+1234567890"
+                value={formData.phone}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
             
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

@@ -113,7 +113,7 @@ const ProfileSettings = () => {
     } else if (profile?.last_name) {
       return profile.last_name;
     }
-    return profile?.role === 'owner' ? 'Billboard Owner' : 'Advertiser';
+    return profile?.role === 'OWNER' ? 'Billboard Owner' : 'Advertiser';
   };
 
   const getInitials = () => {
@@ -122,7 +122,7 @@ const ProfileSettings = () => {
     if (firstName && lastName) {
       return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
     }
-    return profile?.role === 'owner' ? 'BO' : 'AD';
+    return profile?.role === 'OWNER' ? 'BO' : 'AD';
   };
 
   return (
@@ -168,6 +168,7 @@ const ProfileSettings = () => {
             accept="image/*"
             onChange={handleAvatarUpload}
             className="hidden"
+            aria-label="Upload profile picture"
           />
           {uploading && (
             <div className="flex items-center space-x-3 bg-muted/50 px-4 py-2 rounded-full">

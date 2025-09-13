@@ -8,8 +8,8 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { usePaystackPayment } from 'react-paystack';
 
@@ -69,37 +69,16 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('booking_requests')
-        .insert({
-          advertiser_id: user.id,
-          billboard_id: billboard.id,
-          start_date: startDate.toISOString().split('T')[0],
-          end_date: endDate.toISOString().split('T')[0],
-          total_amount: totalAmount,
-          message: message || null,
-          status: 'pending'
-        });
+      // Use backend API instead of Supabase
+      const bookingData = {
+        billboardId: billboard.id,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        message: message || null
+      };
 
-      if (error) throw error;
-
-      // Send notification to billboard owner
-      try {
-        await supabase.functions.invoke('send-notification', {
-          body: {
-            type: 'booking_request',
-            recipientEmail: billboard.email || 'owner@example.com',
-            billboardName: billboard.name,
-            advertiserName: `${user.user_metadata?.first_name || 'User'} ${user.user_metadata?.last_name || ''}`.trim(),
-            startDate: startDate.toISOString().split('T')[0],
-            endDate: endDate.toISOString().split('T')[0],
-            totalAmount: totalAmount
-          }
-        });
-      } catch (notificationError) {
-        console.error('Failed to send notification:', notificationError);
-        // Don't block the booking if notification fails
-      }
+      console.log('Submitting booking request:', bookingData);
+      await apiClient.createBookingRequest(bookingData);
 
       toast({
         title: "Booking Request Submitted!",
@@ -109,9 +88,10 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
       onClose();
       
     } catch (error: any) {
+      console.error('Booking submission error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to submit booking request. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -126,19 +106,11 @@ const BookingModal = ({ isOpen, onClose, billboard }: BookingModalProps) => {
       description: `Your booking has been confirmed. Reference: ${reference.reference}`,
     });
     
-    // Update booking status to paid
+    // Update booking status to paid using backend API
     try {
-      await supabase
-        .from('booking_requests')
-        .update({ 
-          status: 'paid',
-          response_message: 'Payment completed successfully'
-        })
-        .eq('advertiser_id', user?.id)
-        .eq('billboard_id', billboard.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // Note: This would need to be implemented in the backend API
+      // For now, we'll just show success message
+      console.log('Payment successful, reference:', reference.reference);
     } catch (error) {
       console.error('Error updating booking status:', error);
     }

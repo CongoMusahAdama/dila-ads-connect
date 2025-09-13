@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,19 +11,26 @@ import AddBillboardModal from "@/components/AddBillboardModal";
 import BookingRequestsModal from "@/components/BookingRequestsModal";
 import ManageBillboardsModal from "@/components/ManageBillboardsModal";
 import MyBookingsModal from "@/components/MyBookingsModal";
+import BillboardSearch from "@/components/BillboardSearch";
 import ProfileSettings from "@/components/ProfileSettings";
-import { Settings, Home } from "lucide-react";
+import { Settings, Home, RefreshCw } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { apiClient } from "@/lib/api";
 
 const Dashboard = () => {
   const { user, profile, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [dashboardStats, setDashboardStats] = useState({
-    activeListings: 0,
+    totalBillboards: 0,
+    activeBillboards: 0,
     pendingRequests: 0,
+    totalBookings: 0,
+    totalRevenue: 0,
     occupancyRate: 0
   });
+  const [recentBookings, setRecentBookings] = useState([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -31,36 +39,28 @@ const Dashboard = () => {
   }, [user, loading, navigate]);
 
   const fetchDashboardStats = async () => {
-    if (!user || profile?.role !== 'owner') return;
+    if (!user || profile?.role !== 'OWNER') return;
 
+    setIsRefreshing(true);
     try {
-      // Fetch active listings count
-      const { count: listingsCount } = await supabase
-        .from('billboards')
-        .select('*', { count: 'exact', head: true })
-        .eq('owner_id', user.id)
-        .eq('is_available', true);
-
-      // Fetch pending requests count
-      const { count: requestsCount } = await supabase
-        .from('booking_requests')
-        .select('*, billboards!inner(*)', { count: 'exact', head: true })
-        .eq('billboards.owner_id', user.id)
-        .eq('status', 'pending');
-
-      setDashboardStats({
-        activeListings: listingsCount || 0,
-        pendingRequests: requestsCount || 0,
-        occupancyRate: 0 // Placeholder for now
-      });
+      const response = await apiClient.getOwnerDashboardStats();
+      setDashboardStats(response.stats);
+      setRecentBookings(response.recentBookings);
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    if (profile?.role === 'owner') {
+    if (profile?.role === 'OWNER') {
       fetchDashboardStats();
+      
+      // Set up real-time updates every 30 seconds
+      const interval = setInterval(fetchDashboardStats, 30000);
+      
+      return () => clearInterval(interval);
     }
   }, [user, profile]);
 
@@ -88,26 +88,26 @@ const Dashboard = () => {
   };
 
   const getDisplayName = () => {
-    if (profile.first_name && profile.last_name) {
-      return `${profile.first_name} ${profile.last_name}`;
-    } else if (profile.first_name) {
-      return profile.first_name;
-    } else if (profile.last_name) {
-      return profile.last_name;
+    if (profile.firstName && profile.lastName) {
+      return `${profile.firstName} ${profile.lastName}`;
+    } else if (profile.firstName) {
+      return profile.firstName;
+    } else if (profile.lastName) {
+      return profile.lastName;
     }
-    return profile.role === 'owner' ? 'Billboard Owner' : 'Advertiser';
+    return profile.role === 'OWNER' ? 'Billboard Owner' : 'Advertiser';
   };
 
   const getInitials = () => {
-    const firstName = profile.first_name || '';
-    const lastName = profile.last_name || '';
+    const firstName = profile.firstName || '';
+    const lastName = profile.lastName || '';
     if (firstName && lastName) {
       return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
     }
-    return profile.role === 'owner' ? 'BO' : 'AD';
+    return profile.role === 'OWNER' ? 'BO' : 'AD';
   };
 
-  if (profile.role === 'owner') {
+  if (profile.role === 'OWNER') {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b bg-background">
@@ -173,7 +173,7 @@ const Dashboard = () => {
           <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div className="flex items-center space-x-3 sm:space-x-4">
               <Avatar className="w-12 h-12 sm:w-16 sm:h-16">
-                <AvatarImage src={profile.avatar_url || ''} />
+                <AvatarImage src={profile.avatarUrl || ''} />
                 <AvatarFallback className="text-sm sm:text-lg">{getInitials()}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
@@ -198,11 +198,31 @@ const Dashboard = () => {
             </div>
           )}
 
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">Dashboard Analytics</h2>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchDashboardStats}
+              disabled={isRefreshing}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.activeListings}</CardTitle>
-                <CardDescription className="text-sm">Active Listings</CardDescription>
+                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.totalBillboards}</CardTitle>
+                <CardDescription className="text-sm">Total Billboards</CardDescription>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.activeBillboards}</CardTitle>
+                <CardDescription className="text-sm">Active Billboards</CardDescription>
               </CardHeader>
             </Card>
             <Card>
@@ -211,7 +231,19 @@ const Dashboard = () => {
                 <CardDescription className="text-sm">Pending Requests</CardDescription>
               </CardHeader>
             </Card>
-            <Card className="sm:col-span-2 lg:col-span-1">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.totalBookings}</CardTitle>
+                <CardDescription className="text-sm">Total Bookings</CardDescription>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl sm:text-2xl font-bold">${dashboardStats.totalRevenue.toLocaleString()}</CardTitle>
+                <CardDescription className="text-sm">Total Revenue</CardDescription>
+              </CardHeader>
+            </Card>
+            <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.occupancyRate}%</CardTitle>
                 <CardDescription className="text-sm">Occupancy Rate</CardDescription>
@@ -255,6 +287,49 @@ const Dashboard = () => {
                 <BookingRequestsModal />
               </CardContent>
             </Card>
+          </div>
+
+          {/* Recent Bookings Section */}
+          {recentBookings.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-2xl font-bold mb-6">Recent Bookings</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recentBookings.slice(0, 6).map((booking: any) => (
+                  <Card key={booking._id}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">{booking.billboardId?.name || 'Unknown Billboard'}</CardTitle>
+                      <CardDescription className="text-sm">
+                        {booking.billboardId?.location || 'Unknown Location'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Advertiser:</span>
+                          <span>{booking.advertiserId?.profile?.firstName} {booking.advertiserId?.profile?.lastName}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Amount:</span>
+                          <span className="font-semibold">${booking.totalAmount}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Status:</span>
+                          <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'}>
+                            {booking.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Billboards Section for Owners */}
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-6">All Billboards</h2>
+            <BillboardSearch />
           </div>
         </div>
       </div>
@@ -327,7 +402,7 @@ const Dashboard = () => {
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-3 sm:space-x-4">
             <Avatar className="w-12 h-12 sm:w-16 sm:h-16">
-              <AvatarImage src={profile.avatar_url || ''} />
+              <AvatarImage src={profile.avatarUrl || ''} />
               <AvatarFallback className="text-sm sm:text-lg">{getInitials()}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">

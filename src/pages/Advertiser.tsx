@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import BillboardSearch from "@/components/BillboardSearch";
 import BookingsList from "@/components/BookingsList";
+import MyBookingsModal from "@/components/MyBookingsModal";
 import ProfileSettings from "@/components/ProfileSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ const Advertiser = () => {
 
   useEffect(() => {
     console.log('Advertiser useEffect - User:', user?.id, 'Profile:', profile, 'Loading:', loading);
-    if (!loading && (!user || profile?.role !== 'advertiser')) {
+    if (!loading && (!user || profile?.role !== 'ADVERTISER')) {
       console.log('Redirecting to login - no user or wrong role');
       navigate('/login');
     }
@@ -41,7 +42,7 @@ const Advertiser = () => {
   }
 
   // Show nothing while redirecting
-  if (!user || profile?.role !== 'advertiser') {
+  if (!user || profile?.role !== 'ADVERTISER') {
     console.log('No user or wrong role, returning null');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -146,9 +147,10 @@ const Advertiser = () => {
                 <CardTitle className="text-base sm:text-lg">Quick Overview</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="text-center">
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-2">
-                    Your booking status and activity will appear here
+                <div className="space-y-3">
+                  <MyBookingsModal />
+                  <p className="text-xs sm:text-sm text-muted-foreground text-center">
+                    View and manage all your billboard bookings
                   </p>
                 </div>
               </CardContent>
