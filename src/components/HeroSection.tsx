@@ -57,8 +57,18 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="py-16 lg:py-24 bg-gradient-to-b from-background via-background to-muted/20 min-h-[85vh] flex items-center">
-      <div className="container mx-auto px-4">
+    <section className="relative py-16 lg:py-24 bg-gradient-to-b from-background via-background to-muted/20 min-h-[85vh] flex items-center">
+      {/* Mobile Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat lg:hidden"
+        style={{
+          backgroundImage: 'url(/uploads/spicy-chicken-billboard.jpg)',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/40"></div>
+      </div>
+      
+      <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left Content */}
           <div className="text-center lg:text-left space-y-8">
@@ -68,13 +78,13 @@ const HeroSection = () => {
                 : 'translate-y-8 opacity-0'
             }`}>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                <span className="text-foreground drop-shadow-sm">Find Available</span>
+                <span className="text-white lg:text-foreground drop-shadow-lg">Find Available</span>
                 <br />
-                <span className="text-secondary font-extrabold drop-shadow-lg bg-gradient-to-r from-secondary via-secondary to-secondary/80 bg-clip-text text-transparent">
+                <span className="text-white lg:text-secondary font-extrabold drop-shadow-lg bg-gradient-to-r from-white via-white to-white/80 lg:from-secondary lg:via-secondary lg:to-secondary/80 bg-clip-text text-transparent">
                   Billboards
                 </span>
                 <br />
-                <span className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-medium drop-shadow-sm">
+                <span className="text-2xl md:text-3xl lg:text-4xl text-white/90 lg:text-muted-foreground font-medium drop-shadow-lg">
                   in Ghana
                 </span>
               </h1>
@@ -85,7 +95,7 @@ const HeroSection = () => {
                 ? 'translate-y-0 opacity-100' 
                 : 'translate-y-8 opacity-0'
             }`}>
-              <p className="text-lg lg:text-xl text-foreground/80 leading-relaxed max-w-xl font-medium">
+              <p className="text-lg lg:text-xl text-white/90 lg:text-foreground/80 leading-relaxed max-w-xl font-medium drop-shadow-lg">
                 Easily connect with billboard owners and book premium ad spaces for your marketing campaigns.
               </p>
             </div>
@@ -100,7 +110,7 @@ const HeroSection = () => {
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
                   <Input 
                     placeholder="Search billboard by name (e.g., Premium Billboard)" 
-                    className="pl-12 h-14 text-lg border-2 focus:border-primary transition-colors bg-background/50 backdrop-blur-sm"
+                    className="pl-12 h-14 text-lg border-2 focus:border-primary transition-colors bg-white/90 lg:bg-background/50 backdrop-blur-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -120,14 +130,14 @@ const HeroSection = () => {
               {showResults && (
                 <div className="mt-6 max-w-xl mx-auto lg:mx-0">
                   {searchResults.length > 0 ? (
-                    <div className="bg-card/95 backdrop-blur-sm rounded-lg border shadow-lg p-4 space-y-3">
-                      <h3 className="font-semibold text-card-foreground">Found {searchResults.length} billboard(s):</h3>
+                    <div className="bg-white/95 lg:bg-card/95 backdrop-blur-sm rounded-lg border shadow-lg p-4 space-y-3">
+                      <h3 className="font-semibold text-gray-900 lg:text-card-foreground">Found {searchResults.length} billboard(s):</h3>
                       {searchResults.map((billboard) => (
-                        <div key={billboard.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <div key={billboard._id} className="flex items-center justify-between p-3 bg-gray-100/80 lg:bg-muted/50 rounded-lg">
                           <div>
-                            <h4 className="font-medium text-foreground">{billboard.name}</h4>
-                            <p className="text-sm text-muted-foreground">{billboard.location} • {billboard.size}</p>
-                            <p className="text-sm font-medium text-primary">GH₵ {billboard.price_per_day}/day</p>
+                            <h4 className="font-medium text-gray-900 lg:text-foreground">{billboard.name}</h4>
+                            <p className="text-sm text-gray-600 lg:text-muted-foreground">{billboard.location} • {billboard.size}</p>
+                            <p className="text-sm font-medium text-primary">GH₵ {billboard.pricePerDay}/day</p>
                           </div>
                           <Button 
                             size="sm" 
@@ -140,8 +150,8 @@ const HeroSection = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-card/95 backdrop-blur-sm rounded-lg border shadow-lg p-4 text-center">
-                      <p className="text-muted-foreground">
+                    <div className="bg-white/95 lg:bg-card/95 backdrop-blur-sm rounded-lg border shadow-lg p-4 text-center">
+                      <p className="text-gray-600 lg:text-muted-foreground">
                         No billboard matched your search. Try a different name or location.
                       </p>
                     </div>
@@ -151,8 +161,8 @@ const HeroSection = () => {
             </div>
           </div>
           
-          {/* Right Image */}
-          <div className={`flex justify-center lg:justify-end transform transition-all duration-1000 ease-out delay-700 ${
+          {/* Right Image - Hidden on mobile, shown on desktop */}
+          <div className={`hidden lg:flex justify-center lg:justify-end transform transition-all duration-1000 ease-out delay-700 ${
             isVisible 
               ? 'translate-y-0 opacity-100 scale-100' 
               : 'translate-y-8 opacity-0 scale-95'
