@@ -25,12 +25,8 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-  origin: [
-    'http://localhost:8080',
-    'http://localhost:5173',
-    config.FRONTEND_URL
-  ].filter(Boolean),
-  credentials: true,
+  origin: '*', // Allow all origins for now
+  credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
