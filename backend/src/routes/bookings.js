@@ -12,6 +12,7 @@ const {
 router.use(authenticateToken);
 
 // Advertiser routes
+router.get('/my/dashboard-stats', requireRole(['ADVERTISER']), bookingController.getAdvertiserDashboardStats);
 router.post('/', requireRole(['ADVERTISER']), validateBookingRequest, bookingController.createBookingRequest);
 router.get('/my', validatePagination, requireRole(['ADVERTISER']), bookingController.getMyBookingRequests);
 router.get('/my/:id', validateUUID('id'), bookingController.getBookingRequestById);

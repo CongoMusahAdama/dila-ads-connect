@@ -30,6 +30,7 @@ const AdminLogin = () => {
       
       // Store admin info for dashboard check
       localStorage.setItem('adminEmail', email);
+      localStorage.setItem('adminToken', response.token);
       
       navigate('/admin-dashboard');
       toast({

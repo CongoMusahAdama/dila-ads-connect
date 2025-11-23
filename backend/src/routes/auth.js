@@ -12,6 +12,11 @@ const {
 router.post('/register', validateUserRegistration, authController.register);
 router.post('/login', validateUserLogin, authController.login);
 
+// Password reset routes (public)
+router.post('/request-password-reset', authController.requestPasswordReset);
+router.post('/verify-reset-code', authController.verifyResetCode);
+router.post('/reset-password', authController.resetPasswordWithCode);
+
 // Protected routes
 router.get('/profile', authenticateToken, authController.getProfile);
 router.put('/profile', authenticateToken, validateProfile, authController.updateProfile);

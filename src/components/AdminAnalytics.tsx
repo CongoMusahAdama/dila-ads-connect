@@ -28,39 +28,51 @@ const AdminAnalytics = () => {
       title: "Total Users",
       value: stats?.totalUsers || 0,
       icon: Users,
-      color: "text-blue-600",
-      clickable: true,
-      onClick: () => setShowUsersModal(true),
+      accent: "bg-emerald-400",
+      description: "Platform members",
+      footerAction: () => setShowUsersModal(true),
+      footerLabel: "View users",
+      pattern: "radial-gradient(circle at top right, rgba(255,255,255,0.45), transparent 55%), radial-gradient(circle at bottom left, rgba(255,255,255,0.25), transparent 55%)"
     },
     {
       title: "Total Billboards",
       value: stats?.totalBillboards || 0,
       icon: MapPin,
-      color: "text-green-600",
+      accent: "bg-amber-400",
+      description: "Listings in marketplace",
+      pattern: "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.45), transparent 50%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.25), transparent 55%)"
     },
     {
       title: "Total Bookings",
       value: stats?.totalBookings || 0,
       icon: Calendar,
-      color: "text-purple-600",
+      accent: "bg-purple-500",
+      description: "Lifetime bookings",
+      pattern: "radial-gradient(circle at top left, rgba(255,255,255,0.4), transparent 55%), radial-gradient(circle at bottom right, rgba(255,255,255,0.3), transparent 60%)"
     },
     {
       title: "Pending Approvals",
       value: stats?.pendingBillboards || 0,
       icon: Clock,
-      color: "text-secondary",
+      accent: "bg-sky-400",
+      description: "Billboards awaiting approval",
+      pattern: "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.45), transparent 50%), radial-gradient(circle at 75% 80%, rgba(255,255,255,0.3), transparent 60%)"
     },
     {
       title: "Pending Complaints",
       value: stats?.pendingComplaints || 0,
       icon: CheckCircle,
-      color: "text-orange-600",
+      accent: "bg-rose-400",
+      description: "Customer feedback queue",
+      pattern: "radial-gradient(circle at top right, rgba(255,255,255,0.5), transparent 55%), radial-gradient(circle at bottom left, rgba(255,255,255,0.25), transparent 60%)"
     },
     {
       title: "Pending Disputes",
       value: stats?.pendingDisputes || 0,
       icon: TrendingUp,
-      color: "text-red-600",
+      accent: "bg-blue-500",
+      description: "Bookings under review",
+      pattern: "radial-gradient(circle at 25% 25%, rgba(255,255,255,0.45), transparent 55%), radial-gradient(circle at 80% 75%, rgba(255,255,255,0.25), transparent 60%)"
     },
   ];
 
@@ -99,37 +111,57 @@ const AdminAnalytics = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
-        <Badge variant="outline" className="text-sm">
-          Real-time Data
-        </Badge>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Keep track of platform growth and operational workload.
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={refetch}
+          disabled={loading}
+          className="flex items-center gap-2 self-start sm:self-auto"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {analyticsCards.map((card, index) => {
           const IconComponent = card.icon;
           return (
-            <Card 
-              key={index} 
-              className={`hover:shadow-md transition-shadow ${card.clickable ? 'cursor-pointer hover:bg-muted/50' : ''}`}
-              onClick={card.clickable ? card.onClick : undefined}
+            <button
+              key={index}
+              type="button"
+              onClick={card.footerAction}
+              className={`${card.accent} relative overflow-hidden rounded-2xl text-left text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white/30 ${card.footerAction ? 'cursor-pointer' : 'cursor-default'}`}
+              style={{ backgroundImage: card.pattern }}
             >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {card.title}
-                </CardTitle>
-                <IconComponent className={`h-4 w-4 ${card.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{card.value}</div>
-                {card.clickable && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Click to view details
-                  </div>
+              <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-soft-light bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.6),transparent_70%)]" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between text-sm font-medium opacity-90">
+                  <span>{card.title}</span>
+                  <IconComponent className="h-5 w-5 opacity-90" />
+                </div>
+                <div className="mt-6 text-4xl font-extrabold">
+                  {card.value}
+                </div>
+                {card.description && (
+                  <p className="mt-3 text-sm text-white/80">
+                    {card.description}
+                  </p>
                 )}
-              </CardContent>
-            </Card>
+                {card.footerAction && (
+                  <span className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90">
+                    {card.footerLabel}
+                  </span>
+                )}
+              </div>
+            </button>
           );
         })}
       </div>

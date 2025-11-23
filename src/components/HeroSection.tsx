@@ -78,14 +78,14 @@ const HeroSection = () => {
                 : 'translate-y-8 opacity-0'
             }`}>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                <span className="text-white lg:text-foreground drop-shadow-lg">Find Available</span>
+                <span className="text-white lg:text-foreground drop-shadow-lg">Reach More Customers</span>
                 <br />
                 <span className="text-white lg:text-secondary font-extrabold drop-shadow-lg bg-gradient-to-r from-white via-white to-white/80 lg:from-secondary lg:via-secondary lg:to-secondary/80 bg-clip-text text-transparent">
-                  Billboards
+                  with Strategic
                 </span>
                 <br />
                 <span className="text-2xl md:text-3xl lg:text-4xl text-white/90 lg:text-muted-foreground font-medium drop-shadow-lg">
-                  in Ghana
+                  Billboard Spots
                 </span>
               </h1>
             </div>
@@ -96,7 +96,7 @@ const HeroSection = () => {
                 : 'translate-y-8 opacity-0'
             }`}>
               <p className="text-lg lg:text-xl text-white/90 lg:text-foreground/80 leading-relaxed max-w-xl font-medium drop-shadow-lg">
-                Easily connect with billboard owners and book premium ad spaces for your marketing campaigns.
+                Explore available outdoor ad spaces and book with trusted owners across Ghana.
               </p>
             </div>
             

@@ -29,8 +29,18 @@ const Dashboard = () => {
     totalRevenue: 0,
     occupancyRate: 0
   });
+  const [advertiserStats, setAdvertiserStats] = useState({
+    totalRequests: 0,
+    approvedBookings: 0,
+    pendingBookings: 0,
+    rejectedBookings: 0,
+    upcomingBookings: 0,
+    totalSpend: 0
+  });
   const [recentBookings, setRecentBookings] = useState([]);
+  const [advertiserRecentBookings, setAdvertiserRecentBookings] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshingAdvertiser, setIsRefreshingAdvertiser] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -53,6 +63,21 @@ const Dashboard = () => {
     }
   };
 
+  const fetchAdvertiserDashboardStats = async () => {
+    if (!user || profile?.role !== 'ADVERTISER') return;
+
+    setIsRefreshingAdvertiser(true);
+    try {
+      const response = await apiClient.getAdvertiserDashboardStats();
+      setAdvertiserStats(response.stats);
+      setAdvertiserRecentBookings(response.recentBookings);
+    } catch (error) {
+      console.error('Error fetching advertiser stats:', error);
+    } finally {
+      setIsRefreshingAdvertiser(false);
+    }
+  };
+
   useEffect(() => {
     if (profile?.role === 'OWNER') {
       fetchDashboardStats();
@@ -61,6 +86,12 @@ const Dashboard = () => {
       const interval = setInterval(fetchDashboardStats, 30000);
       
       return () => clearInterval(interval);
+    }
+  }, [user, profile]);
+
+  useEffect(() => {
+    if (profile?.role === 'ADVERTISER') {
+      fetchAdvertiserDashboardStats();
     }
   }, [user, profile]);
 
@@ -88,13 +119,26 @@ const Dashboard = () => {
   };
 
   const getDisplayName = () => {
-    if (profile.firstName && profile.lastName) {
-      return `${profile.firstName} ${profile.lastName}`;
-    } else if (profile.firstName) {
-      return profile.firstName;
-    } else if (profile.lastName) {
-      return profile.lastName;
+    const firstName = profile.firstName?.trim();
+    const lastName = profile.lastName?.trim();
+
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
     }
+    if (firstName) {
+      return firstName;
+    }
+    if (lastName) {
+      return lastName;
+    }
+
+    if (user?.email) {
+      const localPart = user.email.split('@')[0];
+      if (localPart) {
+        return localPart.charAt(0).toUpperCase() + localPart.slice(1);
+      }
+    }
+
     return profile.role === 'OWNER' ? 'Billboard Owner' : 'Advertiser';
   };
 
@@ -198,57 +242,89 @@ const Dashboard = () => {
             </div>
           )}
 
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Dashboard Analytics</h2>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Dashboard Analytics</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Track the performance of your billboard portfolio at a glance.
+              </p>
+            </div>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={fetchDashboardStats}
               disabled={isRefreshing}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 self-start sm:self-auto"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.totalBillboards}</CardTitle>
-                <CardDescription className="text-sm">Total Billboards</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.activeBillboards}</CardTitle>
-                <CardDescription className="text-sm">Active Billboards</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.pendingRequests}</CardTitle>
-                <CardDescription className="text-sm">Pending Requests</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.totalBookings}</CardTitle>
-                <CardDescription className="text-sm">Total Bookings</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-xl sm:text-2xl font-bold">${dashboardStats.totalRevenue.toLocaleString()}</CardTitle>
-                <CardDescription className="text-sm">Total Revenue</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-xl sm:text-2xl font-bold">{dashboardStats.occupancyRate}%</CardTitle>
-                <CardDescription className="text-sm">Occupancy Rate</CardDescription>
-              </CardHeader>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6 sm:mb-8">
+            <div className="rounded-2xl bg-emerald-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
+              <div className="flex items-center justify-between text-sm font-medium opacity-90">
+                <span>Total Billboards</span>
+                <span className="text-white/80">Overview</span>
+              </div>
+              <div className="mt-6 text-4xl font-extrabold">
+                {dashboardStats.totalBillboards}
+              </div>
+              <button
+                onClick={() => document.getElementById('all-billboards')?.scrollIntoView({ behavior: 'smooth' })}
+                className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
+              >
+                View billboards
+              </button>
+            </div>
+
+            <div className="rounded-2xl bg-amber-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
+              <div className="flex items-center justify-between text-sm font-medium opacity-90">
+                <span>Active Billboards</span>
+                <span className="text-white/80">Live Campaigns</span>
+              </div>
+              <div className="mt-6 text-4xl font-extrabold">
+                {dashboardStats.activeBillboards}
+              </div>
+              <button
+                onClick={() => document.getElementById('manage-billboards')?.scrollIntoView({ behavior: 'smooth' })}
+                className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
+              >
+                View active
+              </button>
+            </div>
+
+            <div className="rounded-2xl bg-rose-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
+              <div className="flex items-center justify-between text-sm font-medium opacity-90">
+                <span>Pending Requests</span>
+                <span className="text-white/80">Awaiting Action</span>
+              </div>
+              <div className="mt-6 text-4xl font-extrabold">
+                {dashboardStats.pendingRequests}
+              </div>
+              <button
+                onClick={() => document.getElementById('booking-requests')?.scrollIntoView({ behavior: 'smooth' })}
+                className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
+              >
+                View requests
+              </button>
+            </div>
+
+            <div className="rounded-2xl bg-purple-500 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
+              <div className="flex items-center justify-between text-sm font-medium opacity-90">
+                <span>Total Revenue</span>
+                <span className="text-white/80">Lifetime Earnings</span>
+              </div>
+              <div className="mt-6 text-3xl sm:text-4xl font-extrabold">
+                GH₵ {dashboardStats.totalRevenue.toLocaleString()}
+              </div>
+              <button
+                onClick={() => document.getElementById('recent-bookings')?.scrollIntoView({ behavior: 'smooth' })}
+                className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
+              >
+                View revenue
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -264,7 +340,7 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card id="manage-billboards">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg sm:text-xl">Manage Billboards</CardTitle>
                 <CardDescription className="text-sm">
@@ -276,7 +352,7 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            <Card className="sm:col-span-2 lg:col-span-1">
+            <Card id="booking-requests" className="sm:col-span-2 lg:col-span-1">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg sm:text-xl">Booking Requests</CardTitle>
                 <CardDescription className="text-sm">
@@ -291,7 +367,7 @@ const Dashboard = () => {
 
           {/* Recent Bookings Section */}
           {recentBookings.length > 0 && (
-            <div className="mt-8">
+            <div id="recent-bookings" className="mt-8">
               <h2 className="text-2xl font-bold mb-6">Recent Bookings</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recentBookings.slice(0, 6).map((booking: any) => (
@@ -310,7 +386,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Amount:</span>
-                          <span className="font-semibold">${booking.totalAmount}</span>
+                          <span className="font-semibold">GH₵ {Number(booking.totalAmount || 0).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Status:</span>
@@ -327,7 +403,7 @@ const Dashboard = () => {
           )}
 
           {/* All Billboards Section for Owners */}
-          <div className="mt-8">
+          <div id="all-billboards" className="mt-8">
             <h2 className="text-2xl font-bold mb-6">All Billboards</h2>
             <BillboardSearch />
           </div>
@@ -427,6 +503,82 @@ const Dashboard = () => {
           </div>
         )}
 
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">Campaign Analytics</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Monitor your booking activity and campaign investments.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchAdvertiserDashboardStats}
+            disabled={isRefreshingAdvertiser}
+            className="flex items-center gap-2 self-start sm:self-auto"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshingAdvertiser ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6 sm:mb-8">
+          <div className="rounded-2xl bg-emerald-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
+            <div className="flex items-center justify-between text-sm font-medium opacity-90">
+              <span>Total Requests</span>
+              <span className="text-white/80">All time</span>
+            </div>
+            <div className="mt-6 text-4xl font-extrabold">
+              {advertiserStats.totalRequests}
+            </div>
+            <button
+              onClick={() => document.getElementById('my-bookings')?.scrollIntoView({ behavior: 'smooth' })}
+              className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
+            >
+              View requests
+            </button>
+          </div>
+
+          <div className="rounded-2xl bg-amber-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
+            <div className="flex items-center justify-between text-sm font-medium opacity-90">
+              <span>Approved Bookings</span>
+              <span className="text-white/80">Successful campaigns</span>
+            </div>
+            <div className="mt-6 text-4xl font-extrabold">
+              {advertiserStats.approvedBookings}
+            </div>
+            <p className="mt-3 text-sm text-white/80">
+              Upcoming: {advertiserStats.upcomingBookings}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-rose-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
+            <div className="flex items-center justify-between text-sm font-medium opacity-90">
+              <span>Pending Requests</span>
+              <span className="text-white/80">Awaiting owner action</span>
+            </div>
+            <div className="mt-6 text-4xl font-extrabold">
+              {advertiserStats.pendingBookings}
+            </div>
+            <p className="mt-3 text-sm text-white/80">
+              Rejected: {advertiserStats.rejectedBookings}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-purple-500 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
+            <div className="flex items-center justify-between text-sm font-medium opacity-90">
+              <span>Total Spend</span>
+              <span className="text-white/80">Approved bookings</span>
+            </div>
+            <div className="mt-6 text-3xl sm:text-4xl font-extrabold">
+              GH₵ {advertiserStats.totalSpend.toLocaleString()}
+            </div>
+            <p className="mt-3 text-sm text-white/80">
+              Average per booking: GH₵ {advertiserStats.approvedBookings > 0 ? Math.round(advertiserStats.totalSpend / advertiserStats.approvedBookings).toLocaleString() : 0}
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <Card>
             <CardHeader className="pb-3">
@@ -442,7 +594,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card id="my-bookings">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg sm:text-xl">My Bookings</CardTitle>
               <CardDescription className="text-sm">
@@ -454,6 +606,42 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {advertiserRecentBookings.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-6">Recent Activity</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {advertiserRecentBookings.map((booking: any) => (
+                <Card key={booking._id} className="border bg-card/60 backdrop-blur">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">{booking.billboardId?.name || 'Billboard'}</CardTitle>
+                    <CardDescription className="text-sm">
+                      {booking.billboardId?.location || 'Location unavailable'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Scheduled:</span>
+                      <span className="font-medium">
+                        {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Status:</span>
+                      <Badge variant={booking.status === 'APPROVED' ? 'default' : booking.status === 'PENDING' ? 'secondary' : 'destructive'}>
+                        {booking.status}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Investment:</span>
+                      <span className="font-semibold">GH₵ {Number(booking.totalAmount || 0).toLocaleString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

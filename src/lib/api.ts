@@ -109,6 +109,48 @@ class ApiClient {
     });
   }
 
+  // Password reset endpoints
+  async requestPasswordReset(data: {
+    email?: string;
+    phone?: string;
+  }) {
+    return this.request<{
+      message: string;
+      resetCode?: string; // Only in development
+    }>('/auth/request-password-reset', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async verifyResetCode(data: {
+    email?: string;
+    phone?: string;
+    resetCode: string;
+  }) {
+    return this.request<{
+      message: string;
+      verified: boolean;
+    }>('/auth/verify-reset-code', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async resetPassword(data: {
+    email?: string;
+    phone?: string;
+    resetCode: string;
+    newPassword: string;
+  }) {
+    return this.request<{
+      message: string;
+    }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Billboard endpoints
   async getBillboards(params?: {
     page?: number;
@@ -232,6 +274,20 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  }
+
+  async getAdvertiserDashboardStats() {
+    return this.request<{
+      stats: {
+        totalRequests: number;
+        approvedBookings: number;
+        pendingBookings: number;
+        rejectedBookings: number;
+        upcomingBookings: number;
+        totalSpend: number;
+      };
+      recentBookings: any[];
+    }>('/bookings/my/dashboard-stats');
   }
 
   async getMyBookingRequests(params?: { page?: number; limit?: number; status?: string }) {

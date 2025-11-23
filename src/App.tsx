@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 import VerifyPhone from "./pages/VerifyPhone";
 import Dashboard from "./pages/Dashboard";
 import Advertiser from "./pages/Advertiser";
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/verify-phone" element={<VerifyPhone />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/advertiser" element={<Advertiser />} />

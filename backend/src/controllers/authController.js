@@ -2,7 +2,14 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Profile = require('../models/Profile');
 const Admin = require('../models/Admin');
+const PasswordReset = require('../models/PasswordReset');
 const config = require('../config');
+const {
+  sendPasswordResetEmail,
+  sendPasswordResetSMS,
+  isEmailConfigured,
+  isSmsConfigured,
+} = require('../services/notificationService');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -249,12 +256,238 @@ const verifyPhone = async (req, res) => {
   }
 };
 
+// Request password reset
+const requestPasswordReset = async (req, res) => {
+  try {
+    const { email, phone } = req.body;
+
+    // Build query to find user by email or phone
+    const query = {};
+    let contactMethod = '';
+    let contactValue = '';
+    
+    if (email) {
+      query.email = email;
+      contactMethod = 'email';
+      contactValue = email;
+    } else if (phone) {
+      query.phone = phone;
+      contactMethod = 'phone';
+      contactValue = phone;
+    } else {
+      return res.status(400).json({ error: 'Email or phone number is required' });
+    }
+
+    // Find user
+    const user = await User.findOne(query);
+    
+    if (!user) {
+      // For security, don't reveal if user exists or not
+      return res.json({ 
+        message: 'If an account exists with this information, a reset code has been sent.' 
+      });
+    }
+
+    // Generate 6-digit reset code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Invalidate any previous unused reset codes for this user
+    await PasswordReset.updateMany(
+      { userId: user._id, isUsed: false },
+      { isUsed: true }
+    );
+
+    // Create password reset record
+    const passwordReset = new PasswordReset({
+      userId: user._id,
+      resetCode,
+      contactMethod,
+      contactValue,
+      expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
+    });
+
+    await passwordReset.save();
+
+    let delivered = false;
+
+    try {
+      if (contactMethod === 'email') {
+        delivered = await sendPasswordResetEmail({
+          to: contactValue,
+          code: resetCode,
+          expiresInMinutes: 15
+        });
+      } else if (contactMethod === 'phone') {
+        delivered = await sendPasswordResetSMS({
+          to: contactValue,
+          code: resetCode,
+          expiresInMinutes: 15
+        });
+      }
+    } catch (notificationError) {
+      console.error('Failed to dispatch password reset notification:', notificationError);
+    }
+
+    if (!delivered) {
+      console.warn(`Password reset code generated but delivery failed via ${contactMethod}.`);
+    }
+
+    if (config.NODE_ENV !== 'production') {
+      console.log(`Password reset code for ${contactMethod} ${contactValue}: ${resetCode}`);
+    }
+
+    const responsePayload = { 
+      message: 'If an account exists with this information, a reset code has been sent.',
+      deliveryMethod: contactMethod,
+      delivered
+    };
+
+    if (!delivered || config.NODE_ENV !== 'production') {
+      responsePayload.resetCode = resetCode;
+    }
+    
+    if (contactMethod === 'email' && !isEmailConfigured) {
+      responsePayload.deliveryWarning = 'Email credentials are not configured. Reset code shown for testing.';
+    }
+
+    if (contactMethod === 'phone' && !isSmsConfigured) {
+      responsePayload.deliveryWarning = 'SMS credentials are not configured. Reset code shown for testing.';
+    }
+
+    res.json(responsePayload);
+  } catch (error) {
+    console.error('Request password reset error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Verify reset code
+const verifyResetCode = async (req, res) => {
+  try {
+    const { email, phone, resetCode } = req.body;
+
+    if (!resetCode) {
+      return res.status(400).json({ error: 'Reset code is required' });
+    }
+
+    // Build query to find user
+    const query = {};
+    if (email) {
+      query.email = email;
+    } else if (phone) {
+      query.phone = phone;
+    } else {
+      return res.status(400).json({ error: 'Email or phone number is required' });
+    }
+
+    // Find user
+    const user = await User.findOne(query);
+    
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid reset code' });
+    }
+
+    // Find valid reset code
+    const passwordReset = await PasswordReset.findOne({
+      userId: user._id,
+      resetCode,
+      isUsed: false,
+      expiresAt: { $gt: Date.now() }
+    });
+
+    if (!passwordReset) {
+      return res.status(400).json({ error: 'Invalid or expired reset code' });
+    }
+
+    // Increment attempts
+    passwordReset.attempts += 1;
+    await passwordReset.save();
+
+    res.json({ 
+      message: 'Reset code verified successfully.',
+      verified: true
+    });
+  } catch (error) {
+    console.error('Verify reset code error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Reset password with code
+const resetPasswordWithCode = async (req, res) => {
+  try {
+    const { email, phone, resetCode, newPassword } = req.body;
+
+    if (!resetCode || !newPassword) {
+      return res.status(400).json({ error: 'Reset code and new password are required' });
+    }
+
+    // Password validation
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
+    // Build query to find user
+    const query = {};
+    if (email) {
+      query.email = email;
+    } else if (phone) {
+      query.phone = phone;
+    } else {
+      return res.status(400).json({ error: 'Email or phone number is required' });
+    }
+
+    // Find user
+    const user = await User.findOne(query);
+    
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid reset code' });
+    }
+
+    // Find valid reset code
+    const passwordReset = await PasswordReset.findOne({
+      userId: user._id,
+      resetCode,
+      isUsed: false,
+      expiresAt: { $gt: Date.now() }
+    });
+
+    if (!passwordReset) {
+      return res.status(400).json({ error: 'Invalid or expired reset code' });
+    }
+
+    // Update password (will be hashed by pre-save middleware)
+    user.password = newPassword;
+    await user.save();
+
+    // Mark reset code as used
+    passwordReset.isUsed = true;
+    await passwordReset.save();
+
+    // Invalidate all other reset codes for this user
+    await PasswordReset.updateMany(
+      { userId: user._id, _id: { $ne: passwordReset._id }, isUsed: false },
+      { isUsed: true }
+    );
+
+    res.json({ 
+      message: 'Password reset successfully. You can now login with your new password.' 
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   register,
   login,
   getProfile,
   updateProfile,
   changePassword,
-  verifyPhone
+  verifyPhone,
+  requestPasswordReset,
+  verifyResetCode,
+  resetPasswordWithCode
 };
 

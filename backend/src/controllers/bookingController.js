@@ -1,5 +1,73 @@
 const { BookingRequest, Billboard, User } = require('../models');
 
+// Get advertiser dashboard statistics
+const getAdvertiserDashboardStats = async (req, res) => {
+  try {
+    const advertiserId = req.user._id;
+    const now = new Date();
+
+    const [
+      totalRequests,
+      approvedBookings,
+      pendingBookings,
+      rejectedBookings,
+      totalSpendAggregate,
+      upcomingBookings,
+      recentBookings
+    ] = await Promise.all([
+      BookingRequest.countDocuments({ advertiserId }),
+      BookingRequest.countDocuments({ advertiserId, status: 'APPROVED' }),
+      BookingRequest.countDocuments({ advertiserId, status: 'PENDING' }),
+      BookingRequest.countDocuments({ advertiserId, status: 'REJECTED' }),
+      BookingRequest.aggregate([
+        {
+          $match: {
+            advertiserId,
+            status: 'APPROVED'
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$totalAmount' }
+          }
+        }
+      ]),
+      BookingRequest.countDocuments({
+        advertiserId,
+        status: 'APPROVED',
+        startDate: { $gte: now }
+      }),
+      BookingRequest.find({ advertiserId })
+        .populate({
+          path: 'billboardId',
+          select: 'name location imageUrl pricePerDay'
+        })
+        .sort({ createdAt: -1 })
+        .limit(5)
+    ]);
+
+    const totalSpend =
+      totalSpendAggregate.length > 0 ? totalSpendAggregate[0].total : 0;
+
+    res.json({
+      stats: {
+        totalRequests,
+        approvedBookings,
+        pendingBookings,
+        rejectedBookings,
+        upcomingBookings,
+        totalSpend
+      },
+      recentBookings
+    });
+  } catch (error) {
+    console.error('Get advertiser dashboard stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 // Create booking request
 const createBookingRequest = async (req, res) => {
   try {
@@ -484,6 +552,7 @@ const createDispute = async (req, res) => {
 };
 
 module.exports = {
+  getAdvertiserDashboardStats,
   createBookingRequest,
   getMyBookingRequests,
   getBillboardBookingRequests,
