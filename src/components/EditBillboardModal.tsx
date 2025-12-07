@@ -8,24 +8,25 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Upload } from "lucide-react";
+import { apiClient } from "@/lib/api";
+import { getImageUrl } from "@/utils/imageUtils";
 
 interface Billboard {
-  id: string;
+  _id: string; // Updated to match backend
   name: string;
   location: string;
   size: string;
-  price_per_day: number;
-  description: string;
-  image_url: string;
-  phone: string;
-  email: string;
-  is_available: boolean;
+  pricePerDay: number; // Updated to match backend
+  description?: string;
+  imageUrl?: string; // Updated to match backend
+  phone?: string;
+  email?: string;
+  isAvailable: boolean; // Updated to match backend
 }
 
 interface EditBillboardModalProps {
-  billboard: Billboard | null;
+  billboard: any | null; // Allow flexibility but ideally type it
   isOpen: boolean;
   onClose: () => void;
   onBillboardUpdated: () => void;
@@ -36,15 +37,16 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
     name: "",
     location: "",
     size: "",
-    price_per_day: "",
+    pricePerDay: "",
     description: "",
-    image_url: "",
+    imageUrl: "",
     phone: "",
     email: "",
-    is_available: true
+    isAvailable: true,
+    selectedFile: undefined as File | undefined,
+    imagePreview: ""
   });
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,14 +55,23 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
         name: billboard.name || "",
         location: billboard.location || "",
         size: billboard.size || "",
-        price_per_day: billboard.price_per_day?.toString() || "",
+        pricePerDay: billboard.pricePerDay?.toString() || "",
         description: billboard.description || "",
-        image_url: billboard.image_url || "",
+        imageUrl: billboard.imageUrl || "",
         phone: billboard.phone || "",
         email: billboard.email || "",
-        is_available: billboard.is_available
+        isAvailable: billboard.isAvailable !== undefined ? billboard.isAvailable : true,
+        selectedFile: undefined,
+        imagePreview: ""
       });
     }
+
+    // Cleanup preview on unmount or billboard change
+    return () => {
+      if (formData.imagePreview) {
+        URL.revokeObjectURL(formData.imagePreview);
+      }
+    };
   }, [billboard]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -70,7 +81,7 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
     }));
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -93,38 +104,12 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
       return;
     }
 
-    setUploading(true);
-    
-    try {
-      const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
-        .from('billboard-images')
-        .upload(fileName, file);
-
-      if (error) throw error;
-
-      const { data: publicData } = supabase.storage
-        .from('billboard-images')
-        .getPublicUrl(fileName);
-
-      setFormData(prev => ({
-        ...prev,
-        image_url: publicData.publicUrl
-      }));
-
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully!",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload image",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
+    const previewUrl = URL.createObjectURL(file);
+    setFormData(prev => ({
+      ...prev,
+      selectedFile: file,
+      imagePreview: previewUrl
+    }));
   };
 
   const validateImageUrl = (url: string) => {
@@ -141,7 +126,8 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
     e.preventDefault();
     if (!billboard) return;
 
-    if (formData.image_url && !validateImageUrl(formData.image_url)) {
+    // If using URL, validate it
+    if (!formData.selectedFile && formData.imageUrl && !validateImageUrl(formData.imageUrl)) {
       toast({
         title: "Invalid image URL",
         description: "Please enter a valid image URL ending with .jpg, .jpeg, .png, .webp, or .gif",
@@ -151,31 +137,41 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
     }
 
     setLoading(true);
-    
-    const { error } = await supabase
-      .from('billboards')
-      .update({
-        ...formData,
-        price_per_day: parseFloat(formData.price_per_day)
-      })
-      .eq('id', billboard.id);
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
+    try {
+      const submitData = new FormData();
+      submitData.append('name', formData.name);
+      submitData.append('location', formData.location);
+      submitData.append('size', formData.size);
+      submitData.append('pricePerDay', formData.pricePerDay);
+      submitData.append('description', formData.description);
+      submitData.append('phone', formData.phone);
+      submitData.append('email', formData.email);
+      submitData.append('isAvailable', formData.isAvailable.toString());
+
+      if (formData.selectedFile) {
+        submitData.append('image', formData.selectedFile);
+      } else if (formData.imageUrl) {
+        submitData.append('imageUrl', formData.imageUrl);
+      }
+
+      const response = await apiClient.updateBillboard(billboard._id, submitData);
+
       toast({
         title: "Success",
         description: "Billboard updated successfully!",
       });
       onBillboardUpdated();
       onClose();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update billboard",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   if (!billboard) return null;
@@ -189,7 +185,7 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
             Update your billboard listing details.
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -203,11 +199,11 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
-              <Select 
-                value={formData.location} 
+              <Select
+                value={formData.location}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
               >
                 <SelectTrigger>
@@ -234,16 +230,16 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="price_per_day">Price per Day (GHS)</Label>
+              <Label htmlFor="pricePerDay">Price per Day (GHS)</Label>
               <Input
-                id="price_per_day"
-                name="price_per_day"
+                id="pricePerDay"
+                name="pricePerDay"
                 type="number"
                 step="0.01"
                 placeholder="0.00"
-                value={formData.price_per_day}
+                value={formData.pricePerDay}
                 onChange={handleInputChange}
                 required
               />
@@ -252,11 +248,11 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
 
           <div className="flex items-center space-x-2">
             <Switch
-              id="is_available"
-              checked={formData.is_available}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_available: checked }))}
+              id="isAvailable"
+              checked={formData.isAvailable}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isAvailable: checked }))}
             />
-            <Label htmlFor="is_available">Available for booking</Label>
+            <Label htmlFor="isAvailable">Available for booking</Label>
           </div>
 
           <div className="space-y-2">
@@ -266,48 +262,74 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
                 <TabsTrigger value="upload">Upload Image</TabsTrigger>
                 <TabsTrigger value="url">Image URL</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="upload" className="space-y-2">
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <div className="space-y-2">
-                    <Label htmlFor="file-upload" className="cursor-pointer">
-                      <span className="text-sm font-medium text-primary hover:text-primary/80">
-                        Choose image file
-                      </span>
-                      <Input
-                        id="file-upload"
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        disabled={uploading}
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center relative">
+                  {formData.imagePreview ? (
+                    <div className="space-y-2">
+                      <img
+                        src={formData.imagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded border mx-auto"
                       />
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      JPEG, JPG, PNG, WebP up to 5MB
-                    </p>
-                    {uploading && (
-                      <p className="text-sm text-primary">Uploading...</p>
-                    )}
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="file-upload-edit" className="cursor-pointer">
+                          <span className="text-sm font-medium text-primary hover:text-primary/80">
+                            Change image
+                          </span>
+                          <Input
+                            id="file-upload-edit"
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          File: {formData.selectedFile?.name}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                      <div className="space-y-2">
+                        <Label htmlFor="file-upload-edit" className="cursor-pointer">
+                          <span className="text-sm font-medium text-primary hover:text-primary/80">
+                            Choose image file
+                          </span>
+                          <Input
+                            id="file-upload-edit"
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          JPEG, JPG, PNG, WebP up to 5MB
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="url" className="space-y-2">
                 <Input
                   placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
                 />
               </TabsContent>
             </Tabs>
-            
-            {formData.image_url && (
+
+            {!formData.imagePreview && formData.imageUrl && (
               <div className="mt-2">
-                <img 
-                  src={formData.image_url} 
-                  alt="Preview" 
+                <img
+                  // If it's a relative path from our backend
+                  src={getImageUrl(formData.imageUrl)}
+                  alt="Preview"
                   className="w-full h-32 object-cover rounded border"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
@@ -342,7 +364,7 @@ const EditBillboardModal = ({ billboard, isOpen, onClose, onBillboardUpdated }: 
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
               <Input

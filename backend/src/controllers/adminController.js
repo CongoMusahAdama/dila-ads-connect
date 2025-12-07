@@ -54,8 +54,8 @@ const getComplaintById = async (req, res) => {
         populate: {
           path: 'profile',
           select: 'firstName lastName'
-      }
-    });
+        }
+      });
 
     if (!complaint) {
       return res.status(404).json({ error: 'Complaint not found' });
@@ -177,8 +177,8 @@ const getDisputeById = async (req, res) => {
         populate: {
           path: 'profile',
           select: 'firstName lastName'
-      }
-    });
+        }
+      });
 
     if (!dispute || !dispute.hasDispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -285,7 +285,11 @@ const updateBillboardApproval = async (req, res) => {
 
     const updatedBillboard = await Billboard.findByIdAndUpdate(
       id,
-      { isApproved },
+      {
+        isApproved,
+        status: isApproved ? 'APPROVED' : 'REJECTED',
+        ...(isApproved ? { rejectionReason: null } : { rejectionReason: req.body.rejectionReason })
+      },
       { new: true }
     ).populate({
       path: 'ownerId',

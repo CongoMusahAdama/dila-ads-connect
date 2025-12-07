@@ -1,11 +1,18 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import Autoplay from "embla-carousel-autoplay";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const HeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -16,9 +23,28 @@ const HeroSection = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const plugin = useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: true })
+  );
+
+  const heroImages = [
+    {
+      src: "/uploads/spicy-chicken-billboard.jpg",
+      alt: "Spicy Fried Chicken Billboard - Premium advertising space in Ghana"
+    },
+    {
+      src: "/uploads/image copy 2.png",
+      alt: "Strategic Billboard Locations in Accra"
+    },
+    {
+      src: "/uploads/image copy 3.png",
+      alt: "High Visibility Billboard Advertising"
+    }
+  ];
+
   useEffect(() => {
     // Trigger animation on component mount with 2 second delay
-    const timer = setTimeout(() => setIsVisible(true), 2000);
+    const timer = setTimeout(() => setIsVisible(true), 1000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -59,7 +85,7 @@ const HeroSection = () => {
   return (
     <section className="relative py-8 lg:py-24 bg-gradient-to-b from-background via-background to-muted/20 min-h-[50vh] lg:min-h-[85vh] flex items-center">
       {/* Mobile Background Image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat lg:hidden"
         style={{
           backgroundImage: 'url(/uploads/spicy-chicken-billboard.jpg)',
@@ -67,16 +93,15 @@ const HeroSection = () => {
       >
         <div className="absolute inset-0 bg-black/40"></div>
       </div>
-      
+
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left Content */}
           <div className="text-center lg:text-left space-y-8">
-            <div className={`transform transition-all duration-1000 ease-out ${
-              isVisible 
-                ? 'translate-y-0 opacity-100' 
+            <div className={`transform transition-all duration-1000 ease-out ${isVisible
+                ? 'translate-y-0 opacity-100'
                 : 'translate-y-8 opacity-0'
-            }`}>
+              }`}>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 <span className="text-white lg:text-foreground drop-shadow-lg">Reach More Customers</span>
                 <br />
@@ -89,34 +114,32 @@ const HeroSection = () => {
                 </span>
               </h1>
             </div>
-            
-            <div className={`transform transition-all duration-1000 ease-out delay-300 ${
-              isVisible 
-                ? 'translate-y-0 opacity-100' 
+
+            <div className={`transform transition-all duration-1000 ease-out delay-300 ${isVisible
+                ? 'translate-y-0 opacity-100'
                 : 'translate-y-8 opacity-0'
-            }`}>
+              }`}>
               <p className="text-lg lg:text-xl text-white/90 lg:text-foreground/80 leading-relaxed max-w-xl font-medium drop-shadow-lg">
                 Explore available outdoor ad spaces and book with trusted owners across Ghana.
               </p>
             </div>
-            
-            <div className={`transform transition-all duration-1000 ease-out delay-500 ${
-              isVisible 
-                ? 'translate-y-0 opacity-100' 
+
+            <div className={`transform transition-all duration-1000 ease-out delay-500 ${isVisible
+                ? 'translate-y-0 opacity-100'
                 : 'translate-y-8 opacity-0'
-            }`}>
+              }`}>
               <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto lg:mx-0">
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-                  <Input 
-                    placeholder="Search billboard by name (e.g., Premium Billboard)" 
+                  <Input
+                    placeholder="Search billboard by name (e.g., Premium Billboard)"
                     className="pl-12 h-14 text-lg border-2 focus:border-primary transition-colors bg-white/90 lg:bg-background/50 backdrop-blur-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
-                <Button 
+                <Button
                   onClick={handleSearch}
                   disabled={isSearching}
                   className="h-14 px-8 text-lg bg-secondary hover:bg-secondary/90 hover:scale-105 transition-all duration-200 font-semibold shadow-lg"
@@ -139,8 +162,8 @@ const HeroSection = () => {
                             <p className="text-sm text-gray-600 lg:text-muted-foreground">{billboard.location} • {billboard.size}</p>
                             <p className="text-sm font-medium text-primary">GH₵ {billboard.pricePerDay}/day</p>
                           </div>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             onClick={() => navigate('/login')}
                             className="bg-primary hover:bg-primary/90 shadow-md"
                           >
@@ -160,24 +183,42 @@ const HeroSection = () => {
               )}
             </div>
           </div>
-          
-          {/* Right Image - Hidden on mobile, shown on desktop */}
-          <div className={`hidden lg:flex justify-center lg:justify-end transform transition-all duration-1000 ease-out delay-700 ${
-            isVisible 
-              ? 'translate-y-0 opacity-100 scale-100' 
+
+          {/* Right Image Carousel - Hidden on mobile, shown on desktop */}
+          <div className={`hidden lg:flex justify-center lg:justify-end transform transition-all duration-1000 ease-out delay-700 ${isVisible
+              ? 'translate-y-0 opacity-100 scale-100'
               : 'translate-y-8 opacity-0 scale-95'
-          }`}>
+            }`}>
             <div className="relative w-full max-w-2xl">
-              <div className="relative overflow-hidden rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 ring-1 ring-border/50">
-                <img 
-                  src="/uploads/spicy-chicken-billboard.jpg"
-                  alt="Spicy Fried Chicken Billboard - Premium advertising space in Ghana"
-                  className="w-full h-auto object-cover"
-                  style={{ aspectRatio: '16/10' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
-              </div>
-              
+              <Carousel
+                plugins={[plugin.current]}
+                className="w-full"
+                onMouseEnter={plugin.current.stop}
+                onMouseLeave={plugin.current.reset}
+                opts={{
+                  align: "start",
+                  loop: true,
+                }}
+              >
+                <CarouselContent>
+                  {heroImages.map((image, index) => (
+                    <CarouselItem key={index}>
+                      <div className="relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 hover:shadow-3xl ring-1 ring-border/50">
+                        <img
+                          src={image.src}
+                          alt={image.alt}
+                          className="w-full h-auto object-cover"
+                          style={{ aspectRatio: '16/10' }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {/* <CarouselPrevious className="left-4" />
+                <CarouselNext className="right-4" /> */}
+              </Carousel>
+
               {/* Decorative elements */}
               <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
               <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-secondary/20 rounded-full blur-lg animate-pulse delay-1000"></div>

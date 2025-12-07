@@ -38,12 +38,17 @@ interface Booking {
   createdAt: string;
 }
 
-const BookingsList = () => {
+interface BookingsListProps {
+  initialFilter?: string;
+}
+
+const BookingsList = ({ initialFilter }: BookingsListProps) => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   const { bookingRequests: bookings, loading, refetch } = useMyBookingRequests();
+  const [activeFilter, setActiveFilter] = useState<string>(initialFilter || "ALL");
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -84,11 +89,11 @@ const BookingsList = () => {
     };
 
     const initializePayment = usePaystackPayment(paystackConfig);
-    
+
     const onPaymentSuccess = async (reference: any) => {
       try {
         // Update booking with payment confirmation
-        await apiClient.updateBookingStatus(booking._id, { 
+        await apiClient.updateBookingStatus(booking._id, {
           status: 'APPROVED', // Keep as APPROVED but update response message
           responseMessage: `Payment completed successfully. Reference: ${reference.reference}. Your booking is now confirmed.`
         });
@@ -97,7 +102,7 @@ const BookingsList = () => {
           title: "Payment Successful!",
           description: `Your booking has been confirmed. Reference: ${reference.reference}`,
         });
-        
+
         refetch();
       } catch (error) {
         console.error('Error updating booking status:', error);
@@ -161,7 +166,7 @@ const BookingsList = () => {
                     e.currentTarget.src = "/placeholder.svg";
                   }}
                 />
-                
+
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Duration:</span>
@@ -170,7 +175,7 @@ const BookingsList = () => {
                     ({calculateDuration(selectedBooking.startDate, selectedBooking.endDate)} days)
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Total Amount:</span>
@@ -187,7 +192,7 @@ const BookingsList = () => {
                     {formatDate(selectedBooking.createdAt)}
                   </span>
                 </div>
-                
+
                 {selectedBooking.message && (
                   <div>
                     <span className="font-medium">Your Message:</span>
@@ -196,7 +201,7 @@ const BookingsList = () => {
                     </p>
                   </div>
                 )}
-                
+
                 {selectedBooking.responseMessage && (
                   <div>
                     <span className="font-medium">Owner Response:</span>
@@ -261,58 +266,60 @@ const BookingsList = () => {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {bookings.map((booking) => (
-            <Card key={booking._id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedBooking(booking)}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-base line-clamp-2">
-                    {booking.billboardId?.name || 'Billboard (Details Unavailable)'}
-                  </CardTitle>
-                  {getStatusBadge(booking.status)}
-                </div>
-                <CardDescription className="flex items-center gap-1 text-xs">
-                  <MapPin className="h-3 w-3" />
-                  {booking.billboardId?.location || 'Location not available'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <img
-                  src={booking.billboardId.imageUrl ? getBillboardImageUrl({ imageUrl: booking.billboardId.imageUrl }) : "/placeholder.svg"}
-                  alt={booking.billboardId.name || 'Billboard'}
-                  className="w-full h-24 object-cover rounded mb-3"
-                  onError={(e) => {
-                    e.currentTarget.src = "/placeholder.svg";
-                  }}
-                />
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Duration:</span>
-                    <span className="font-medium">
-                      {calculateDuration(booking.startDate, booking.endDate)} days
-                    </span>
+          {bookings
+            .filter(booking => activeFilter === "ALL" || booking.status === activeFilter)
+            .map((booking) => (
+              <Card key={booking._id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedBooking(booking)}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-base line-clamp-2">
+                      {booking.billboardId?.name || 'Billboard (Details Unavailable)'}
+                    </CardTitle>
+                    {getStatusBadge(booking.status)}
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Amount:</span>
-                    <span className="font-bold text-green-600">
-                      GHS {booking.totalAmount.toLocaleString()}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Requested:</span>
-                    <span>{formatDate(booking.createdAt)}</span>
-                  </div>
-                </div>
+                  <CardDescription className="flex items-center gap-1 text-xs">
+                    <MapPin className="h-3 w-3" />
+                    {booking.billboardId?.location || 'Location not available'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <img
+                    src={booking.billboardId.imageUrl ? getBillboardImageUrl({ imageUrl: booking.billboardId.imageUrl }) : "/placeholder.svg"}
+                    alt={booking.billboardId.name || 'Billboard'}
+                    className="w-full h-24 object-cover rounded mb-3"
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.svg";
+                    }}
+                  />
 
-                <Button variant="outline" size="sm" className="w-full mt-3 flex items-center gap-2">
-                  <Eye className="h-3 w-3" />
-                  View Details
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Duration:</span>
+                      <span className="font-medium">
+                        {calculateDuration(booking.startDate, booking.endDate)} days
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Amount:</span>
+                      <span className="font-bold text-green-600">
+                        GHS {booking.totalAmount.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Requested:</span>
+                      <span>{formatDate(booking.createdAt)}</span>
+                    </div>
+                  </div>
+
+                  <Button variant="outline" size="sm" className="w-full mt-3 flex items-center gap-2">
+                    <Eye className="h-3 w-3" />
+                    View Details
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
         </div>
       )}
     </div>

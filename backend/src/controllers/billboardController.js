@@ -10,7 +10,7 @@ const getAllBillboards = async (req, res) => {
 
     // Build query - owners can see all billboards, others see only available and approved
     const query = {};
-    
+
     // If user is not authenticated or not an owner, show only available and approved billboards
     if (!req.user || req.user.role !== 'OWNER') {
       query.isAvailable = true;
@@ -112,10 +112,6 @@ const getMyBillboards = async (req, res) => {
 
     const [billboards, total] = await Promise.all([
       Billboard.find({ ownerId: req.user._id })
-        .populate({
-          path: 'bookingRequests',
-          select: '_id'
-        })
         .skip(skip)
         .limit(parseInt(limit))
         .sort({ createdAt: -1 }),
@@ -151,7 +147,7 @@ const createBillboard = async (req, res) => {
     } = req.body;
 
     // Handle image upload
-    let imageUrl = null;
+    let imageUrl = req.body.imageUrl || null;
     if (req.file) {
       imageUrl = `/uploads/${req.file.filename}`;
     }
@@ -165,7 +161,10 @@ const createBillboard = async (req, res) => {
       description,
       phone,
       email,
-      imageUrl
+      email,
+      imageUrl,
+      status: 'PENDING',
+      isApproved: false
     });
 
     await billboard.save();
@@ -217,9 +216,15 @@ const updateBillboard = async (req, res) => {
 
     // Handle image upload
     let imageUrl = existingBillboard.imageUrl;
+
+    // If a new image URL is provided in body, use it
+    if (req.body.imageUrl) {
+      imageUrl = req.body.imageUrl;
+    }
+
     if (req.file) {
-      // Delete old image if exists
-      if (existingBillboard.imageUrl) {
+      // Delete old image if exists and is a local file
+      if (existingBillboard.imageUrl && existingBillboard.imageUrl.startsWith('/uploads/')) {
         const oldImagePath = path.join(process.cwd(), 'uploads', path.basename(existingBillboard.imageUrl));
         if (fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
@@ -240,6 +245,13 @@ const updateBillboard = async (req, res) => {
 
     if (pricePerDay !== undefined) updateData.pricePerDay = parseFloat(pricePerDay);
     if (isAvailable !== undefined) updateData.isAvailable = isAvailable;
+
+    // If it was rejected, reset to pending on update
+    if (existingBillboard.status === 'REJECTED') {
+      updateData.status = 'PENDING';
+      updateData.isApproved = false;
+      updateData.rejectionReason = null;
+    }
 
     const updatedBillboard = await Billboard.findByIdAndUpdate(
       id,
@@ -327,7 +339,7 @@ const getFeaturedBillboards = async (req, res) => {
 const getOwnerDashboardStats = async (req, res) => {
   try {
     const ownerId = req.user._id;
-    
+
     const [
       totalBillboards,
       activeBillboards,
@@ -338,39 +350,39 @@ const getOwnerDashboardStats = async (req, res) => {
     ] = await Promise.all([
       // Total billboards owned by this user
       Billboard.countDocuments({ ownerId }),
-      
+
       // Active (available and approved) billboards
-      Billboard.countDocuments({ 
-        ownerId, 
-        isAvailable: true, 
-        isApproved: true 
+      Billboard.countDocuments({
+        ownerId,
+        isAvailable: true,
+        isApproved: true
       }),
-      
+
       // Pending booking requests for user's billboards
-      BookingRequest.countDocuments({ 
+      BookingRequest.countDocuments({
         status: 'pending',
         billboardId: { $in: await Billboard.find({ ownerId }).distinct('_id') }
       }),
-      
+
       // Total bookings for user's billboards
-      BookingRequest.countDocuments({ 
+      BookingRequest.countDocuments({
         status: 'confirmed',
         billboardId: { $in: await Billboard.find({ ownerId }).distinct('_id') }
       }),
-      
+
       // Total revenue from confirmed bookings
       BookingRequest.aggregate([
-        { 
-          $match: { 
+        {
+          $match: {
             status: 'confirmed',
             billboardId: { $in: await Billboard.find({ ownerId }).distinct('_id') }
-          } 
+          }
         },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } }
       ]),
-      
+
       // Recent bookings for user's billboards
-      BookingRequest.find({ 
+      BookingRequest.find({
         billboardId: { $in: await Billboard.find({ ownerId }).distinct('_id') }
       })
         .populate({

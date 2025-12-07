@@ -1,97 +1,124 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { Edit, MapPin, Calendar, Eye } from "lucide-react";
+import { Edit, MapPin, Calendar, Trash2 } from "lucide-react";
 import EditBillboardModal from "./EditBillboardModal";
+import { useMyBillboards } from "@/hooks/useBillboards";
+import { getBillboardImageUrl } from "@/utils/imageUtils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Billboard {
-  id: string;
+  _id: string;
   name: string;
   location: string;
   size: string;
-  price_per_day: number;
-  description: string;
-  image_url: string;
-  phone: string;
-  email: string;
-  is_available: boolean;
-  created_at: string;
+  pricePerDay: number;
+  description?: string;
+  imageUrl?: string;
+  phone?: string;
+  email?: string;
+  isAvailable: boolean;
+  isApproved: boolean;
+  createdAt: string;
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectionReason?: string;
 }
 
-const ManageBillboardsModal = () => {
+interface ManageBillboardsModalProps {
+  trigger?: React.ReactNode;
+}
+
+const ManageBillboardsModal = ({ trigger }: ManageBillboardsModalProps) => {
   const [open, setOpen] = useState(false);
-  const [billboards, setBillboards] = useState<Billboard[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedBillboard, setSelectedBillboard] = useState<Billboard | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [billboardToDelete, setBillboardToDelete] = useState<Billboard | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
 
-  const fetchBillboards = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('billboards')
-        .select('*')
-        .eq('owner_id', user.id)
-        .order('created_at', { ascending: false });
+  const {
+    billboards,
+    loading,
+    updateBillboard,
+    deleteBillboard,
+    refetch
+  } = useMyBillboards();
 
-      if (error) throw error;
-      setBillboards(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch billboards",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (open && user) {
-      fetchBillboards();
-    }
-  }, [open, user]);
-
-  const handleEditBillboard = (billboard: Billboard) => {
+  const handleEditBillboard = (billboard: any) => {
+    // Map the backend structure to what the edit modal might expect if needed,
+    // but better to update the edit modal to use the backend structure.
     setSelectedBillboard(billboard);
     setIsEditModalOpen(true);
   };
 
-  const handleBillboardUpdated = () => {
-    fetchBillboards();
+  const handleBillboardUpdated = async () => {
+    await refetch();
     setIsEditModalOpen(false);
     setSelectedBillboard(null);
   };
 
   const handleToggleAvailability = async (billboard: Billboard) => {
     try {
-      const { error } = await supabase
-        .from('billboards')
-        .update({ is_available: !billboard.is_available })
-        .eq('id', billboard.id);
+      const formData = new FormData();
+      formData.append('isAvailable', (!billboard.isAvailable).toString());
 
-      if (error) throw error;
+      // We also need to send required fields if the backend validation is strict,
+      // but usually PATCH/PUT allows partial updates or we send everything.
+      // Based on controller, it looks like it accepts partials but we should be careful.
+      // The controller assigns req.body fields to updateData.
+      // Let's send basic required fields just in case or hopefully the backend handles partials.
+      // Looking at controller: if (pricePerDay !== undefined) ... 
+      // It iterates fields. It seems safe to send just isAvailable.
 
-      toast({
-        title: "Success",
-        description: `Billboard ${!billboard.is_available ? 'enabled' : 'disabled'} successfully!`,
-      });
+      const result = await updateBillboard(billboard._id, formData);
 
-      fetchBillboards();
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Billboard ${!billboard.isAvailable ? 'enabled' : 'disabled'} successfully!`,
+        });
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to update billboard status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteBillboard = async () => {
+    if (!billboardToDelete) return;
+
+    try {
+      const result = await deleteBillboard(billboardToDelete._id);
+
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Billboard deleted successfully",
+        });
+        setBillboardToDelete(null);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete billboard",
         variant: "destructive",
       });
     }
@@ -105,7 +132,7 @@ const ManageBillboardsModal = () => {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" className="w-full">Manage Billboards</Button>
+          {trigger || <Button variant="outline" className="w-full">Manage Billboards</Button>}
         </DialogTrigger>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -125,15 +152,22 @@ const ManageBillboardsModal = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {billboards.map((billboard) => (
-                <Card key={billboard.id} className="w-full">
+              {billboards.map((billboard: any) => (
+                <Card key={billboard._id} className={`w-full ${billboard.status === 'REJECTED' ? 'border-destructive/50' : ''}`}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{billboard.name}</CardTitle>
                       <div className="flex items-center gap-2">
-                        <Badge variant={billboard.is_available ? "default" : "destructive"}>
-                          {billboard.is_available ? "Available" : "Unavailable"}
+                        <Badge variant={billboard.isAvailable ? "default" : "secondary"}>
+                          {billboard.isAvailable ? "Available" : "Unavailable"}
                         </Badge>
+                        {billboard.status === 'REJECTED' ? (
+                          <Badge variant="destructive">Rejected</Badge>
+                        ) : (
+                          <Badge variant={billboard.isApproved ? "default" : "outline"}>
+                            {billboard.isApproved ? "Approved" : "Pending Approval"}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <CardDescription className="flex items-center gap-2">
@@ -142,19 +176,30 @@ const ManageBillboardsModal = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {billboard.status === 'REJECTED' && (
+                      <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm font-medium">
+                        Rejection Reason: {billboard.rejectionReason || 'No reason provided. Please contact admin.'}
+                        <div className="mt-1 text-xs opacity-90">Edit and save to resubmit for approval.</div>
+                      </div>
+                    )}
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        {billboard.image_url && (
+                        {billboard.imageUrl && (
                           <img
-                            src={billboard.image_url}
+                            // Handle both relative and absolute URLs if needed, but backend serves relative usually
+                            src={getBillboardImageUrl(billboard)}
                             alt={billboard.name}
                             className="w-full h-32 object-cover rounded border"
+                            onError={(e) => {
+                              // Fallback or hide
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
                         )}
-                        
+
                         <div className="space-y-1">
                           <p><span className="font-medium">Size:</span> {billboard.size}</p>
-                          <p><span className="font-medium">Price:</span> GHS {billboard.price_per_day}/day</p>
+                          <p><span className="font-medium">Price:</span> GHS {billboard.pricePerDay}/day</p>
                           <p><span className="font-medium">Phone:</span> {billboard.phone}</p>
                           <p><span className="font-medium">Email:</span> {billboard.email}</p>
                         </div>
@@ -169,11 +214,11 @@ const ManageBillboardsModal = () => {
                             </p>
                           </div>
                         )}
-                        
+
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">
-                            Created: {formatDate(billboard.created_at)}
+                            Created: {formatDate(billboard.createdAt)}
                           </span>
                         </div>
                       </div>
@@ -190,9 +235,16 @@ const ManageBillboardsModal = () => {
                       </Button>
                       <Button
                         onClick={() => handleToggleAvailability(billboard)}
-                        variant={billboard.is_available ? "destructive" : "default"}
+                        variant={billboard.isAvailable ? "secondary" : "default"}
                       >
-                        {billboard.is_available ? "Mark Unavailable" : "Mark Available"}
+                        {billboard.isAvailable ? "Mark Unavailable" : "Mark Available"}
+                      </Button>
+                      <Button
+                        onClick={() => setBillboardToDelete(billboard)}
+                        variant="destructive"
+                        size="icon"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </CardContent>
@@ -212,6 +264,23 @@ const ManageBillboardsModal = () => {
         }}
         onBillboardUpdated={handleBillboardUpdated}
       />
+
+      <AlertDialog open={!!billboardToDelete} onOpenChange={(open) => !open && setBillboardToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your billboard listing.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteBillboard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

@@ -33,10 +33,14 @@ interface BookingRequest {
   createdAt: string;
 }
 
-const BookingRequestsModal = () => {
+interface BookingRequestsModalProps {
+  trigger?: React.ReactNode;
+}
+
+const BookingRequestsModal = ({ trigger }: BookingRequestsModalProps) => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  
+
   const { bookingRequests: requests, loading, updateBookingStatus } = useBillboardBookingRequests();
 
   const handleApprove = async (requestId: string) => {
@@ -45,7 +49,7 @@ const BookingRequestsModal = () => {
         status: 'APPROVED',
         responseMessage: 'Your booking request has been approved. You can now proceed with payment.'
       });
-      
+
       if (result.success) {
         toast({
           title: "Booking Approved",
@@ -69,7 +73,7 @@ const BookingRequestsModal = () => {
         status: 'REJECTED',
         responseMessage: 'Your booking request has been rejected. Please contact the owner for more information.'
       });
-      
+
       if (result.success) {
         toast({
           title: "Booking Rejected",
@@ -115,14 +119,16 @@ const BookingRequestsModal = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
-          <span>Booking Requests</span>
-          {requests.filter(req => req.status === 'PENDING').length > 0 && (
-            <Badge variant="destructive" className="ml-1">
-              {requests.filter(req => req.status === 'PENDING').length}
-            </Badge>
-          )}
-        </Button>
+        {trigger || (
+          <Button variant="outline" className="flex items-center gap-2">
+            <span>Booking Requests</span>
+            {requests.filter(req => req.status === 'PENDING').length > 0 && (
+              <Badge variant="destructive" className="ml-1">
+                {requests.filter(req => req.status === 'PENDING').length}
+              </Badge>
+            )}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -191,7 +197,7 @@ const BookingRequestsModal = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {request.message && (
                     <div className="mt-4 p-3 bg-muted rounded-lg">
                       <p className="text-sm">

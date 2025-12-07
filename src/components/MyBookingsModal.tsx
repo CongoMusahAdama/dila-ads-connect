@@ -4,15 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import BookingsList from "./BookingsList";
 
-const MyBookingsModal = () => {
+interface MyBookingsModalProps {
+  trigger?: React.ReactNode;
+  initialFilter?: string;
+}
+
+const MyBookingsModal = ({ trigger, initialFilter }: MyBookingsModalProps) => {
   const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
-          <span>My Bookings</span>
-        </Button>
+        {trigger || (
+          <Button variant="outline" className="flex items-center gap-2">
+            <span>My Bookings</span>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -21,7 +28,7 @@ const MyBookingsModal = () => {
             View and manage all your billboard booking requests.
           </DialogDescription>
         </DialogHeader>
-        <BookingsList />
+        <BookingsList initialFilter={initialFilter} />
       </DialogContent>
     </Dialog>
   );

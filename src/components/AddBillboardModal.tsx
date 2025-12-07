@@ -116,7 +116,7 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
     }
 
     setLoading(true);
-    
+
     // Create FormData for file upload
     const submitData = new FormData();
     submitData.append('name', formData.name);
@@ -126,7 +126,7 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
     submitData.append('description', formData.description);
     submitData.append('phone', formData.phone);
     submitData.append('email', formData.email);
-    
+
     // Add image file if selected, otherwise add imageUrl
     if (formData.selectedFile) {
       submitData.append('image', formData.selectedFile);
@@ -145,7 +145,12 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
       if (formData.imagePreview) {
         URL.revokeObjectURL(formData.imagePreview);
       }
-      
+
+      // Scroll to manage billboards section
+      setTimeout(() => {
+        document.getElementById('manage-billboards')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+
       setFormData({
         name: "",
         location: "",
@@ -167,7 +172,7 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
         variant: "destructive",
       });
     }
-    
+
     setLoading(false);
   };
 
@@ -183,7 +188,7 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
             Fill in the details for your new billboard listing.
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -197,11 +202,11 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
-              <Select 
-                value={formData.location} 
+              <Select
+                value={formData.location}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
               >
                 <SelectTrigger>
@@ -228,7 +233,7 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="pricePerDay">Price per Day (GHS)</Label>
               <Input
@@ -251,14 +256,14 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
                 <TabsTrigger value="upload">Upload Image</TabsTrigger>
                 <TabsTrigger value="url">Image URL</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="upload" className="space-y-2">
                 <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center relative">
                   {formData.imagePreview ? (
                     <div className="space-y-2">
-                      <img 
-                        src={formData.imagePreview} 
-                        alt="Preview" 
+                      <img
+                        src={formData.imagePreview}
+                        alt="Preview"
                         className="w-full h-48 object-cover rounded border mx-auto"
                       />
                       <div className="space-y-2">
@@ -301,7 +306,7 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
                   )}
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="url" className="space-y-2">
                 <Input
                   placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
@@ -313,12 +318,12 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
                 </p>
               </TabsContent>
             </Tabs>
-            
+
             {formData.imageUrl && (
               <div className="mt-2">
-                <img 
-                  src={formData.imageUrl} 
-                  alt="Preview" 
+                <img
+                  src={formData.imageUrl}
+                  alt="Preview"
                   className="w-full h-32 object-cover rounded border"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
@@ -353,7 +358,7 @@ const AddBillboardModal = ({ onBillboardAdded }: AddBillboardModalProps) => {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
               <Input

@@ -39,6 +39,7 @@ const Dashboard = () => {
   });
   const [recentBookings, setRecentBookings] = useState([]);
   const [advertiserRecentBookings, setAdvertiserRecentBookings] = useState([]);
+  const [activeCampaigns, setActiveCampaigns] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRefreshingAdvertiser, setIsRefreshingAdvertiser] = useState(false);
 
@@ -71,6 +72,7 @@ const Dashboard = () => {
       const response = await apiClient.getAdvertiserDashboardStats();
       setAdvertiserStats(response.stats);
       setAdvertiserRecentBookings(response.recentBookings);
+      setActiveCampaigns(response.activeCampaigns || []);
     } catch (error) {
       console.error('Error fetching advertiser stats:', error);
     } finally {
@@ -81,10 +83,10 @@ const Dashboard = () => {
   useEffect(() => {
     if (profile?.role === 'OWNER') {
       fetchDashboardStats();
-      
+
       // Set up real-time updates every 30 seconds
       const interval = setInterval(fetchDashboardStats, 30000);
-      
+
       return () => clearInterval(interval);
     }
   }, [user, profile]);
@@ -172,8 +174,8 @@ const Dashboard = () => {
               <Button variant="ghost" onClick={() => navigate('/dashboard')} className="text-sm">
                 Dashboard
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => setShowProfileSettings(!showProfileSettings)}
                 className="flex items-center gap-2 text-sm"
               >
@@ -186,8 +188,8 @@ const Dashboard = () => {
               </Button>
             </nav>
             <div className="md:hidden flex items-center space-x-2">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => navigate('/')}
                 className="flex items-center gap-1 px-2"
@@ -196,8 +198,8 @@ const Dashboard = () => {
                 <Home size={16} />
                 <span className="text-xs">Home</span>
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => setShowProfileSettings(!showProfileSettings)}
                 className="p-2"
@@ -249,9 +251,9 @@ const Dashboard = () => {
                 Track the performance of your billboard portfolio at a glance.
               </p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={fetchDashboardStats}
               disabled={isRefreshing}
               className="flex items-center gap-2 self-start sm:self-auto"
@@ -270,12 +272,15 @@ const Dashboard = () => {
               <div className="mt-6 text-4xl font-extrabold">
                 {dashboardStats.totalBillboards}
               </div>
-              <button
-                onClick={() => document.getElementById('all-billboards')?.scrollIntoView({ behavior: 'smooth' })}
-                className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
-              >
-                View billboards
-              </button>
+              <ManageBillboardsModal
+                trigger={
+                  <button
+                    className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
+                  >
+                    View billboards
+                  </button>
+                }
+              />
             </div>
 
             <div className="rounded-2xl bg-amber-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
@@ -286,12 +291,15 @@ const Dashboard = () => {
               <div className="mt-6 text-4xl font-extrabold">
                 {dashboardStats.activeBillboards}
               </div>
-              <button
-                onClick={() => document.getElementById('manage-billboards')?.scrollIntoView({ behavior: 'smooth' })}
-                className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
-              >
-                View active
-              </button>
+              <ManageBillboardsModal
+                trigger={
+                  <button
+                    className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
+                  >
+                    View active
+                  </button>
+                }
+              />
             </div>
 
             <div className="rounded-2xl bg-rose-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
@@ -302,12 +310,15 @@ const Dashboard = () => {
               <div className="mt-6 text-4xl font-extrabold">
                 {dashboardStats.pendingRequests}
               </div>
-              <button
-                onClick={() => document.getElementById('booking-requests')?.scrollIntoView({ behavior: 'smooth' })}
-                className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
-              >
-                View requests
-              </button>
+              <BookingRequestsModal
+                trigger={
+                  <button
+                    className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
+                  >
+                    View requests
+                  </button>
+                }
+              />
             </div>
 
             <div className="rounded-2xl bg-purple-500 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
@@ -318,12 +329,15 @@ const Dashboard = () => {
               <div className="mt-6 text-3xl sm:text-4xl font-extrabold">
                 GH₵ {dashboardStats.totalRevenue.toLocaleString()}
               </div>
-              <button
-                onClick={() => document.getElementById('recent-bookings')?.scrollIntoView({ behavior: 'smooth' })}
-                className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
-              >
-                View revenue
-              </button>
+              <BookingRequestsModal
+                trigger={
+                  <button
+                    className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
+                  >
+                    View revenue
+                  </button>
+                }
+              />
             </div>
           </div>
 
@@ -433,8 +447,8 @@ const Dashboard = () => {
             <Button variant="ghost" onClick={() => navigate('/dashboard')} className="text-sm">
               Dashboard
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => setShowProfileSettings(!showProfileSettings)}
               className="flex items-center gap-2 text-sm"
             >
@@ -447,8 +461,8 @@ const Dashboard = () => {
             </Button>
           </nav>
           <div className="md:hidden flex items-center space-x-2">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => navigate('/')}
               className="flex items-center gap-1 px-2"
@@ -457,8 +471,8 @@ const Dashboard = () => {
               <Home size={16} />
               <span className="text-xs">Home</span>
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => setShowProfileSettings(!showProfileSettings)}
               className="p-2"
@@ -523,59 +537,104 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6 sm:mb-8">
-          <div className="rounded-2xl bg-emerald-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
-            <div className="flex items-center justify-between text-sm font-medium opacity-90">
+          <div className="rounded-2xl bg-emerald-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl relative overflow-hidden">
+            <div className="flex items-center justify-between text-sm font-medium opacity-90 relative z-10">
               <span>Total Requests</span>
               <span className="text-white/80">All time</span>
             </div>
-            <div className="mt-6 text-4xl font-extrabold">
+            <div className="mt-6 text-4xl font-extrabold relative z-10">
               {advertiserStats.totalRequests}
             </div>
-            <button
-              onClick={() => document.getElementById('my-bookings')?.scrollIntoView({ behavior: 'smooth' })}
-              className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90"
-            >
-              View requests
-            </button>
+            <MyBookingsModal
+              trigger={
+                <button
+                  className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90 relative z-10"
+                >
+                  View requests
+                </button>
+              }
+              initialFilter="ALL"
+            />
           </div>
 
-          <div className="rounded-2xl bg-amber-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
-            <div className="flex items-center justify-between text-sm font-medium opacity-90">
-              <span>Approved Bookings</span>
-              <span className="text-white/80">Successful campaigns</span>
+          <div className="rounded-2xl bg-amber-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl relative overflow-hidden">
+            <div className="flex items-center justify-between text-sm font-medium opacity-90 relative z-10">
+              <span>Active Campaigns</span>
+              <span className="text-white/80">Live Now</span>
             </div>
-            <div className="mt-6 text-4xl font-extrabold">
+            <div className="mt-6 text-4xl font-extrabold relative z-10">
               {advertiserStats.approvedBookings}
             </div>
-            <p className="mt-3 text-sm text-white/80">
-              Upcoming: {advertiserStats.upcomingBookings}
-            </p>
+
+            {activeCampaigns.length > 0 ? (
+              <div className="mt-3 relative z-10">
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/80">Next Expiry:</p>
+                <div className="text-sm font-medium">
+                  {Math.ceil((new Date(activeCampaigns[0].endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days left
+                </div>
+                <div className="text-xs opacity-75 truncate max-w-full">
+                  {activeCampaigns[0].billboardId.name}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-white/80 relative z-10">
+                No active campaigns
+              </p>
+            )}
+
+            <MyBookingsModal
+              trigger={
+                <button
+                  className="mt-4 inline-flex items-center text-sm font-semibold text-white hover:text-white/90 relative z-10"
+                >
+                  View active
+                </button>
+              }
+              initialFilter="APPROVED"
+            />
           </div>
 
-          <div className="rounded-2xl bg-rose-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
-            <div className="flex items-center justify-between text-sm font-medium opacity-90">
+          <div className="rounded-2xl bg-rose-400 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl relative overflow-hidden">
+            <div className="flex items-center justify-between text-sm font-medium opacity-90 relative z-10">
               <span>Pending Requests</span>
               <span className="text-white/80">Awaiting owner action</span>
             </div>
-            <div className="mt-6 text-4xl font-extrabold">
+            <div className="mt-6 text-4xl font-extrabold relative z-10">
               {advertiserStats.pendingBookings}
             </div>
-            <p className="mt-3 text-sm text-white/80">
+            <p className="mt-3 text-sm text-white/80 relative z-10">
               Rejected: {advertiserStats.rejectedBookings}
             </p>
+            <MyBookingsModal
+              trigger={
+                <button
+                  className="mt-4 inline-flex items-center text-sm font-semibold text-white hover:text-white/90 relative z-10"
+                >
+                  View pending
+                </button>
+              }
+              initialFilter="PENDING"
+            />
           </div>
 
-          <div className="rounded-2xl bg-purple-500 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl">
-            <div className="flex items-center justify-between text-sm font-medium opacity-90">
+          <div className="rounded-2xl bg-purple-500 text-white p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl relative overflow-hidden">
+            <div className="flex items-center justify-between text-sm font-medium opacity-90 relative z-10">
               <span>Total Spend</span>
               <span className="text-white/80">Approved bookings</span>
             </div>
-            <div className="mt-6 text-3xl sm:text-4xl font-extrabold">
+            <div className="mt-6 text-3xl sm:text-4xl font-extrabold relative z-10">
               GH₵ {advertiserStats.totalSpend.toLocaleString()}
             </div>
-            <p className="mt-3 text-sm text-white/80">
-              Average per booking: GH₵ {advertiserStats.approvedBookings > 0 ? Math.round(advertiserStats.totalSpend / advertiserStats.approvedBookings).toLocaleString() : 0}
-            </p>
+            <MyBookingsModal
+              trigger={
+                <button
+                  className="mt-6 inline-flex items-center text-sm font-semibold text-white hover:text-white/90 relative z-10"
+                >
+                  View details
+                </button>
+              }
+              initialFilter="APPROVED"
+            />
           </div>
         </div>
 

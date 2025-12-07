@@ -11,9 +11,7 @@ const getAdvertiserDashboardStats = async (req, res) => {
       approvedBookings,
       pendingBookings,
       rejectedBookings,
-      totalSpendAggregate,
-      upcomingBookings,
-      recentBookings
+      activeBookings
     ] = await Promise.all([
       BookingRequest.countDocuments({ advertiserId }),
       BookingRequest.countDocuments({ advertiserId, status: 'APPROVED' }),
@@ -44,7 +42,18 @@ const getAdvertiserDashboardStats = async (req, res) => {
           select: 'name location imageUrl pricePerDay'
         })
         .sort({ createdAt: -1 })
-        .limit(5)
+        .limit(5),
+      // Active campaigns for countdown (Approved and not yet ended)
+      BookingRequest.find({
+        advertiserId,
+        status: 'APPROVED',
+        endDate: { $gte: now }
+      })
+        .populate({
+          path: 'billboardId',
+          select: 'name location imageUrl'
+        })
+        .sort({ endDate: 1 }) // Closest end date first
     ]);
 
     const totalSpend =
@@ -59,7 +68,8 @@ const getAdvertiserDashboardStats = async (req, res) => {
         upcomingBookings,
         totalSpend
       },
-      recentBookings
+      recentBookings,
+      activeCampaigns: activeBookings
     });
   } catch (error) {
     console.error('Get advertiser dashboard stats error:', error);
@@ -74,14 +84,14 @@ const createBookingRequest = async (req, res) => {
     console.log('=== CREATE BOOKING REQUEST ===');
     console.log('Request body:', req.body);
     console.log('User ID:', req.user._id);
-    
+
     const { billboardId, startDate, endDate, message } = req.body;
 
     // Check if billboard exists and is available
     console.log('Looking for billboard with ID:', billboardId);
     const billboard = await Billboard.findById(billboardId)
       .populate('ownerId', 'email');
-    
+
     console.log('Found billboard:', billboard);
 
     if (!billboard) {
@@ -143,7 +153,7 @@ const createBookingRequest = async (req, res) => {
     // Calculate total amount
     const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
     const totalAmount = daysDiff * billboard.pricePerDay;
-    
+
     console.log('Calculated total amount:', totalAmount, 'for', daysDiff, 'days');
 
     // Create booking request
@@ -155,7 +165,7 @@ const createBookingRequest = async (req, res) => {
       totalAmount,
       message
     };
-    
+
     console.log('Creating booking request with data:', bookingRequestData);
     const bookingRequest = new BookingRequest(bookingRequestData);
 
@@ -339,8 +349,8 @@ const getBookingRequestById = async (req, res) => {
     }
 
     // Check if user has access to this booking request
-    const hasAccess = 
-      bookingRequest.advertiserId._id.toString() === req.user._id.toString() || 
+    const hasAccess =
+      bookingRequest.advertiserId._id.toString() === req.user._id.toString() ||
       bookingRequest.billboardId.ownerId._id.toString() === req.user._id.toString();
 
     if (!hasAccess) {
@@ -493,8 +503,8 @@ const createDispute = async (req, res) => {
     }
 
     // Check if user has access to this booking request
-    const hasAccess = 
-      existingRequest.advertiserId.toString() === req.user._id.toString() || 
+    const hasAccess =
+      existingRequest.advertiserId.toString() === req.user._id.toString() ||
       existingRequest.billboardId.ownerId.toString() === req.user._id.toString();
 
     if (!hasAccess) {
